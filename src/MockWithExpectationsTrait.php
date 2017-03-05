@@ -1,6 +1,8 @@
 <?php
 namespace Nopolabs\Test;
 
+use PHPUnit\Framework\Exception;
+use PHPUnit_Framework_MockObject_Matcher_Invocation;
 use PHPUnit_Framework_MockObject_MockObject;
 
 trait MockWithExpectationsTrait
@@ -56,11 +58,10 @@ trait MockWithExpectationsTrait
         array $expectations)
     {
         foreach ($expectations as $method => $expectation) {
-            if ($expectation === 'never') {
-                $mock->expects($this->never())->method($method);
-            } else {
-                $this->setExpectation($mock, $method, $this->once(), $expectation);
+            if (!is_array($expectation)) {
+                $expectation = ['invoked' => $expectation];
             }
+            $this->setExpectation($mock, $method, $expectation);
         }
     }
 
@@ -68,12 +69,16 @@ trait MockWithExpectationsTrait
         PHPUnit_Framework_MockObject_MockObject $mock,
         array $atExpectations)
     {
-        foreach ($atExpectations as $at => $atExpectation) {
+        $at = 0;
+        foreach ($atExpectations as $atExpectation) {
             list($method, $expectation) = $atExpectation;
             if ($expectation === 'never') {
                 $mock->expects($this->never())->method($method);
+            } elseif (is_array($expectation)) {
+                $expectation['invoked'] = $this->at($at++);
+                $this->setExpectation($mock, $method, $expectation);
             } else {
-                $this->setExpectation($mock, $method, $this->at($at), $expectation);
+                throw new Exception("setAtExpectations cannot understand expectation '$expectation'");
             }
         }
     }
@@ -81,14 +86,59 @@ trait MockWithExpectationsTrait
     protected function setExpectation(
         PHPUnit_Framework_MockObject_MockObject $mock,
         $method,
-        $matcher,
         array $expectation)
     {
+        if (isset($expectation['invoked'])) {
+            if ($expectation['invoked'] instanceof PHPUnit_Framework_MockObject_Matcher_Invocation) {
+                $matcher = $expectation['invoked'];
+            } else {
+                $matcher = $this->convertToMatcher($expectation['invoked']);
+            }
+        } else {
+            $matcher = $this->once();
+        }
         $params = isset($expectation['params']) ? $expectation['params'] : [];
         $result = isset($expectation['result']) ? $expectation['result'] : null;
         $builder = $mock->expects($matcher)->method($method);
         call_user_func_array([$builder, 'with'], $params);
         $builder->willReturn($result);
+    }
+
+    /**
+     * @param $invoked
+     * @return PHPUnit_Framework_MockObject_Matcher_Invocation
+     */
+    protected function convertToMatcher($invoked)
+    {
+        if (is_numeric($invoked)) {
+            $times = (int) $invoked;
+            if ($times === 0) {
+                return $this->never();
+            } elseif ($times === 1) {
+                return $this->once();
+            } else {
+                return $this->exactly($times);
+            }
+        } elseif ($invoked === 'once') {
+            return $this->once();
+        } elseif ($invoked === 'any') {
+            return $this->any();
+        } elseif ($invoked === 'never') {
+            return $this->never();
+        } elseif ($invoked === 'atLeastOnce') {
+            return $this->atLeastOnce();
+        } elseif (preg_match('/(\w+)\s+(\d+)/', $invoked, $matches)) {
+            $method = $matches[1];
+            $count = $matches[2];
+            if ($method === 'atLeast') {
+                return $this->atLeast($count);
+            } elseif ($method === 'exactly') {
+                return $this->exactly($count);
+            } elseif ($method === 'atMost') {
+                return $this->atMost($count);
+            }
+        }
+        throw new Exception("convertToMatcher cannot convert '$invoked'");
     }
 
     private function isAssociative(array $array)

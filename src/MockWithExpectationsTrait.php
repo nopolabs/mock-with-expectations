@@ -5,6 +5,9 @@ use PHPUnit\Framework\Exception;
 use PHPUnit_Framework_MockObject_Matcher_Invocation;
 use PHPUnit_Framework_MockObject_MockObject;
 
+/**
+ * This trait expects to be used in a sub-class of PHPUnit\Framework\TestCase
+ */
 trait MockWithExpectationsTrait
 {
     protected function newPartialMockWithExpectations(

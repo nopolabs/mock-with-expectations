@@ -12,7 +12,9 @@ Consider this `refundOrder()` function:
 public function refundOrder($orderId)
 {
     $order = $this->orderRepository->findOrder($orderId);
-    $this->orderRefunder->refund($order);
+    if ($order->isRefundable()) {
+        $this->orderRefunder->refund($order);
+    }
 }
 ```
 
@@ -29,6 +31,10 @@ public function testRefundOrder()
         ->method('findOrder')
         ->with($orderId)
         ->willReturn($order);
+     
+    $order->expects($this->once())
+        ->method('isRefundable')
+        ->willReturn(true);
         
     $orderRefunder->expects($this->once())
         ->method('refund')
@@ -54,6 +60,11 @@ protected function findOrder($orderId) : Order
     return $this->orderRepository->findOrder($orderId);
 }
 
+protected function isRefundable(Order $order) : bool
+{
+    return $order->isRefundable();
+}
+
 protected function refund(Order $order)
 {
     return $this->orderRefunder->refund($order);
@@ -68,7 +79,20 @@ public function testRefundOrder()
     $order = $this->createMock(Order::class);
     $manager = $this->newPartialMockWithExpectations(OrderManager::class, [
         ['findOrder', ['params' => [$orderId], 'result' => $order],
-        ['refund', ['params' => [$order]],
+        ['isRefundable', ['params' => [$order], 'result' => true]
+        ['refund', ['params' => [$order]]],
+    ]);
+    $manager->refundOrder($orderId);
+}
+
+public function testRefundOrderNotRefundable()
+{
+    $orderId = 1337;
+    $order = $this->createMock(Order::class);
+    $manager = $this->newPartialMockWithExpectations(OrderManager::class, [
+        ['findOrder', ['params' => [$orderId], 'result' => $order],
+        ['isRefundable', ['params' => [$order], 'result' => false]
+        ['refund', 'never'],
     ]);
     $manager->refundOrder($orderId);
 }

@@ -52,7 +52,9 @@ Refactoring `refundOrder()`:
 public function refundOrder($orderId)
 {
     $order = $this->findOrder($orderId);
-    $this->refund($order);
+    if ($order->isRefundable()) {
+        $this->refund($order);
+    }
 }
 
 protected function findOrder($orderId) : Order
@@ -99,3 +101,78 @@ public function testRefundOrderNotRefundable()
 ```
 
 Discuss.
+
+`testRefundOrder()` is testing an external API exposed by `OrderManager`.
+In turn `OrderManager` composes functions method calls to several objects
+to implement the `refundOrder()` function. The refactoring organizes these
+calls as a single internal API. In this example the internal API is
+implemented as three protected methods on `OrderManager`. These methods
+are tools that help `OrderManager` to do its job of order management.
+As the internal order management API grows it might get moved to its
+own `OrderManagement` class, e.g.:
+
+```
+class OrderManagement
+{
+    private $orderRepository;
+    private $orderRefunder;
+    
+    public __construct(OrderRepository $orderRepository, OrderRefunder $orderRefunder)
+    {
+        $this->orderRepository = $orderRepository;
+        $this->orderRefunder = $orderRefunder;
+    }
+    
+    public function findOrder($orderId) : Order
+    {
+        return $this->orderRepository->findOrder($orderId);
+    }
+    
+    public function isRefundable(Order $order) : bool
+    {
+        return $order->isRefundable();
+    }
+    
+    public function refund(Order $order)
+    {
+        return $this->orderRefunder->refund($order);
+    }
+}
+
+class OrderManager
+{
+    private $orderManagement;
+    
+    public __construct(OrderManagement $orderManagement)
+    {
+        $this->orderManagement = $orderManagement;
+    }
+    
+    public function refundOrder($orderId)
+    {
+        $order = $this->orderManagement->findOrder($orderId);
+        if ($order->orderManagement->isRefundable()) {
+            $this->orderManagement->refund($order);
+        }
+    }
+}
+
+class OrderManagerTest extends TestCase
+{
+    use MockWithExpectationsTrait;
+    
+    public function testRefundOrder()
+    {
+        $orderId = 1337;
+        $order = $this->createMock(Order::class);
+        $management = $this->newPartialMockWithExpectations(OrderManagement::class, [
+            ['findOrder', ['params' => [$orderId], 'result' => $order],
+            ['isRefundable', ['params' => [$order], 'result' => true]
+            ['refund', ['params' => [$order]]],
+        ]);
+        $manager = new OrderManager($management);
+        
+        $manager->refundOrder($orderId);
+    }
+}
+```

@@ -12,7 +12,7 @@ trait MockWithExpectationsTrait
 {
     protected function newPartialMockWithExpectations(
         $originalClassName,
-        array $expectations,
+        array $expectations = [],
         array $constructorArgs = null)
     {
         if (empty($expectations)) {
@@ -38,7 +38,7 @@ trait MockWithExpectationsTrait
 
     protected function newPartialMock(
         $originalClassName,
-        array $methods,
+        array $methods = [],
         array $constructorArgs = null)
     {
         $builder = $this->getMockBuilder($originalClassName)

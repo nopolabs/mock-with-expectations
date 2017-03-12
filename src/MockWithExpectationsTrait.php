@@ -130,7 +130,7 @@ trait MockWithExpectationsTrait
             return $this->atLeastOnce();
         } elseif (preg_match('/(\w+)\s+(\d+)/', $invoked, $matches)) {
             $method = $matches[1];
-            $count = $matches[2];
+            $count = (int) $matches[2];
             if ($method === 'atLeast') {
                 return $this->atLeast($count);
             } elseif ($method === 'exactly') {

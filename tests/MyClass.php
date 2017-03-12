@@ -1,8 +1,15 @@
 <?php
 namespace Nopolabs\Test\Tests;
 
+use Exception;
+
 class MyClass
 {
+    public function fun()
+    {
+        throw new Exception('fun() was not mocked!');
+    }
+
     public function myFunction($value)
     {
         $a = $this->a($value);

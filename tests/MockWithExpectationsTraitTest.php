@@ -8,18 +8,6 @@ class MockWithExpectationsTraitTest extends TestCase
 {
     use MockWithExpectationsTrait;
 
-    public function testExpectations()
-    {
-        /** @var MyClass $myTest */
-        $myTest = $this->newPartialMockWithExpectations(MyClass::class, [
-            'b' => ['params' => ['y'], 'result' => 'z'],
-            'a' => ['params' => ['x'], 'result' => 'y'],
-            'c' => 'never',
-        ]);
-
-        $this->assertEquals('z', $myTest->myFunction('x'));
-    }
-
     public function testAtExpectations()
     {
         /** @var MyClass $myTest */
@@ -30,6 +18,87 @@ class MockWithExpectationsTraitTest extends TestCase
         ]);
 
         $this->assertEquals('z', $myTest->myFunction('x'));
+    }
+
+    public function testExpectations()
+    {
+        /** @var MyClass $myTest */
+        $myTest = $this->newPartialMockWithExpectations(MyClass::class, [
+            'c' => 'never',
+            'b' => ['params' => ['y'], 'result' => 'z'],
+            'a' => ['params' => ['x'], 'result' => 'y'],
+        ]);
+
+        $this->assertEquals('z', $myTest->myFunction('x'));
+    }
+
+    public function expectationDataProvider()
+    {
+        return [
+            [[], null],
+            [
+                ['result' => 'foo'],
+                ['params' => [], 'result' => 'foo']
+            ],
+            [
+                ['result' => ['foo', 'bar']],
+                ['params' => [], 'result' => ['foo', 'bar']]
+            ],
+            [
+                ['params' => ['foo'], 'result' => 'bar'],
+                ['params' => ['foo'], 'result' => 'bar']
+            ],
+            [
+                ['params' => ['foo', 2], 'result' => 'bar'],
+                ['params' => ['foo', 2], 'result' => 'bar']
+            ],
+            [
+                ['params' => ['foo', 2, 3], 'result' => 'bar'],
+                ['params' => ['foo', 2, 3], 'result' => 'bar']
+            ],
+            [['invoked' => 0], [], 0],
+            [['invoked' => 1], ['params' => [], 'result' => null], 1],
+            [['invoked' => 2], ['params' => [], 'result' => null], 2],
+            [['invoked' => 'once'], ['params' => [], 'result' => null], 1],
+            [['invoked' => 'any'], ['params' => [], 'result' => null], 17],
+            [['invoked' => 'never'], ['params' => [], 'result' => null], 0],
+            [['invoked' => 'atLeastOnce'], ['params' => [], 'result' => null], 1],
+            [['invoked' => 'atLeastOnce'], ['params' => [], 'result' => null], 2],
+            [['invoked' => 'atLeast 2'], ['params' => [], 'result' => null], 2],
+            [['invoked' => 'atLeast 2'], ['params' => [], 'result' => null], 3],
+            [['invoked' => 'exactly 7'], ['params' => [], 'result' => null], 7],
+            [['invoked' => 'atMost 2'], ['params' => [], 'result' => null], 1],
+            [['invoked' => 'atMost 2'], ['params' => [], 'result' => null], 2],
+        ];
+    }
+
+    /**
+     * @dataProvider expectationDataProvider
+     */
+    public function testSetExpectation(array $expectation, $expected, $count = 1)
+    {
+        $myTest = $this->createMock(MyClass::class);
+
+        $this->setExpectation($myTest, 'fun', $expectation);
+
+        if ($count > 0) {
+            $params = $expected['params'];
+
+            $actual = 'function never called';
+            for ($i = 0; $i < $count; $i++) {
+                if (count($params) === 0) {
+                    $actual = $myTest->fun();
+                } elseif (count($params) === 1) {
+                    $actual = $myTest->fun($params[0]);
+                } else if (count($params) === 2) {
+                    $actual = $myTest->fun($params[0], $params[1]);
+                } else {
+                    $actual = call_user_func_array([$myTest, 'fun'], $params);
+                }
+            }
+
+            $this->assertSame($expected['result'], $actual);
+        }
     }
 
     public function convertToMatcherDataProvider()

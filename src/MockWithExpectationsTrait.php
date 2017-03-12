@@ -15,9 +15,7 @@ trait MockWithExpectationsTrait
         array $expectations = [],
         array $constructorArgs = null)
     {
-        if (empty($expectations)) {
-            $methods = [];
-        } elseif ($this->isAssociative($expectations)) {
+        if ($this->isAssociative($expectations)) {
             $methods = array_unique(array_keys($expectations));
         } else {
             $methods = array_unique(array_map(function ($expectation) {

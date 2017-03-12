@@ -181,3 +181,22 @@ class OrderManagerTest extends TestCase
 }
 ```
 
+# Using MockWithExpectationsTrait
+
+## via composer
+
+    composer require nopolabs/mock-with-expectations
+
+## methods
+
+### newPartialMockWithExpectations
+
+### newPartialMock
+
+### setExpectations
+
+### setAtExpectations
+
+### setExpectation
+
+### convertToMatcher

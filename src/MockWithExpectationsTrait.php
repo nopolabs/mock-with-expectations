@@ -11,23 +11,17 @@ use PHPUnit_Framework_MockObject_MockObject;
 trait MockWithExpectationsTrait
 {
     protected function newPartialMockWithExpectations(
-        $originalClassName,
+        $className,
         array $expectations = [],
         array $constructorArgs = null)
     {
         if ($this->isAssociative($expectations)) {
             $methods = array_unique(array_keys($expectations));
-        } else {
-            $methods = array_unique(array_map(function ($expectation) {
-                return $expectation[0];
-            }, $expectations));
-        }
-
-        $mock = $this->newPartialMock($originalClassName, $methods, $constructorArgs);
-
-        if ($this->isAssociative($expectations)) {
+            $mock = $this->newPartialMock($className, $methods, $constructorArgs);
             $this->setExpectations($mock, $expectations);
         } else {
+            $methods = array_unique(array_column($expectations, 0));
+            $mock = $this->newPartialMock($className, $methods, $constructorArgs);
             $this->setAtExpectations($mock, $expectations);
         }
 
@@ -35,11 +29,11 @@ trait MockWithExpectationsTrait
     }
 
     protected function newPartialMock(
-        $originalClassName,
+        $className,
         array $methods = [],
         array $constructorArgs = null)
     {
-        $builder = $this->getMockBuilder($originalClassName)
+        $builder = $this->getMockBuilder($className)
             ->disableOriginalClone()
             ->disableArgumentCloning()
             ->disallowMockingUnknownTypes()

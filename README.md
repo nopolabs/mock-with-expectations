@@ -183,7 +183,7 @@ class OrderManagerTest extends TestCase
 
 # Using MockWithExpectationsTrait
 
-## via composer
+## composer require
 
     composer require nopolabs/mock-with-expectations
 

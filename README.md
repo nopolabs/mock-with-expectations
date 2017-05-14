@@ -52,7 +52,7 @@ Refactoring `refundOrder()`:
 public function refundOrder($orderId)
 {
     $order = $this->findOrder($orderId);
-    if ($order->isRefundable()) {
+    if ($this->isRefundable($order)) {
         $this->refund($order);
     }
 }

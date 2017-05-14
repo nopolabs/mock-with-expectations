@@ -4,6 +4,8 @@ namespace Nopolabs\Test;
 use PHPUnit\Framework\Exception;
 use PHPUnit_Framework_MockObject_Matcher_Invocation;
 use PHPUnit_Framework_MockObject_MockObject;
+use ReflectionClass;
+use ReflectionMethod;
 
 /**
  * This trait expects to be used in a sub-class of PHPUnit\Framework\TestCase
@@ -17,10 +19,24 @@ trait MockWithExpectationsTrait
     {
         if ($this->isAssociative($expectations)) {
             $methods = array_unique(array_keys($expectations));
+        } else {
+            $methods = array_unique(array_column($expectations, 0));
+        }
+
+        $missingMethods = $this->getMissingMethods($className, $methods);
+
+        if ($this->isAssociative($expectations)) {
+            foreach ($missingMethods as $method) {
+                $expectations[$method] = 'never';
+                $methods[] = $method;
+            }
             $mock = $this->newPartialMock($className, $methods, $constructorArgs);
             $this->setExpectations($mock, $expectations);
         } else {
-            $methods = array_unique(array_column($expectations, 0));
+            foreach ($missingMethods as $method) {
+                $expectations[] = [$method, 'never'];
+                $methods[] = $method;
+            }
             $mock = $this->newPartialMock($className, $methods, $constructorArgs);
             $this->setAtExpectations($mock, $expectations);
         }
@@ -140,5 +156,25 @@ trait MockWithExpectationsTrait
     {
         return array_keys($array) !== range(0, count($array) - 1);
     }
-}
 
+    private function getMissingMethods($className, array $methods) : array
+    {
+        $reflection = new ReflectionClass($className);
+
+        if ($reflection->isInterface()) {
+            $publicMethods = array_map(function (ReflectionMethod $m) {
+                return $m->name;
+            }, $reflection->getMethods(ReflectionMethod::IS_PUBLIC));
+            return array_diff($publicMethods, $methods);
+        }
+
+        if ($reflection->isAbstract()) {
+            $abstractMethods = array_map(function(ReflectionMethod $m) {
+                return $m->name;
+            }, $reflection->getMethods(ReflectionMethod::IS_ABSTRACT));
+            return array_diff($abstractMethods, $methods);
+        }
+
+        return [];
+    }
+}

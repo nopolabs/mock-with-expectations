@@ -101,6 +101,42 @@ class MockWithExpectationsTraitTest extends TestCase
         }
     }
 
+    public function testNewPartialMockWithExpectations_interfaceMissingMethods()
+    {
+        $mock = $this->newPartialMockWithExpectations(TestInterface::class, [
+            'method1' => ['result' => 'hello'],
+        ]);
+
+        $this->assertSame('hello', $mock->method1());
+    }
+
+    public function testNewPartialMockWithExpectations_interfaceMissingMethodsAt()
+    {
+        $mock = $this->newPartialMockWithExpectations(TestInterface::class, [
+            ['method1', ['result' => 'hello']],
+        ]);
+
+        $this->assertSame('hello', $mock->method1());
+    }
+
+    public function testNewPartialMockWithExpectations_abstractMissingMethods()
+    {
+        $mock = $this->newPartialMockWithExpectations(TestAbstractClass::class, [
+            'method1' => ['result' => 'hello'],
+        ]);
+
+        $this->assertSame('hello', $mock->method1());
+    }
+
+    public function testNewPartialMockWithExpectations_abstractMissingMethodsAt()
+    {
+        $mock = $this->newPartialMockWithExpectations(TestAbstractClass::class, [
+            ['method1', ['result' => 'hello']],
+        ]);
+
+        $this->assertSame('hello', $mock->method1());
+    }
+
     public function convertToMatcherDataProvider()
     {
         return [

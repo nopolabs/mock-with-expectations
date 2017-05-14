@@ -103,7 +103,7 @@ public function testRefundOrderNotRefundable()
 Using `MockWithExpectationsTrait` reduces the amount of boilerplate code
 needed to write the tests. In addition it is using the `at()` invocation
 matcher to ensure that the methods are called in the expected order. The
-original test does no check the order in which the methods are called.
+original test does not check the order in which the methods are called.
 
 The way I look at it is this:
 `testRefundOrder()` is testing an external API exposed by `OrderManager`.

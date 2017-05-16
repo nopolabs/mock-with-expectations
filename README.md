@@ -1,5 +1,7 @@
 # MockWithExpectationsTrait
 
+[![Build Status](https://travis-ci.org/nopolabs/mock-with-expectations.svg?branch=master)](https://travis-ci.org/nopolabs/mock-with-expectations)
+
 This trait contains some helper methods to be used in a sub-class of
 `PHPUnit\Framework\TestCase`.
 

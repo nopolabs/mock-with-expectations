@@ -1,7 +1,9 @@
 {
     "name": "nopolabs/mock-with-expectations",
     "description": "Helper trait for phpunit testing",
-    "require-dev": {},
+    "require-dev": {
+        "codeclimate/php-test-reporter": "dev-master"
+    },
     "license": "MIT",
     "authors": [
         {

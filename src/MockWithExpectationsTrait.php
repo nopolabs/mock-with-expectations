@@ -3,6 +3,7 @@ namespace Nopolabs\Test;
 
 use PHPUnit\Framework\Exception;
 use PHPUnit_Framework_MockObject_Matcher_Invocation;
+use PHPUnit_Framework_MockObject_MockBuilder;
 use PHPUnit_Framework_MockObject_MockObject;
 use ReflectionClass;
 use ReflectionMethod;
@@ -15,31 +16,45 @@ trait MockWithExpectationsTrait
     protected function newPartialMockWithExpectations(
         $className,
         array $expectations = [],
-        array $constructorArgs = null)
+        array $constructorArgs = null): PHPUnit_Framework_MockObject_MockObject
     {
         if ($this->isAssociative($expectations)) {
-            $methods = array_unique(array_keys($expectations));
-        } else {
-            $methods = array_unique(array_column($expectations, 0));
+            return $this->newPartialMockWithExpectationsMap($className, $expectations, $constructorArgs);
         }
 
+        return $this->newPartialMockWithExpectationsList($className, $expectations, $constructorArgs);
+    }
+
+    protected function newPartialMockWithExpectationsMap(
+        $className,
+        array $expectations,
+        array $constructorArgs = null): PHPUnit_Framework_MockObject_MockObject
+    {
+        $methods = array_unique(array_keys($expectations));
         $missingMethods = $this->getMissingMethods($className, $methods);
-
-        if ($this->isAssociative($expectations)) {
-            foreach ($missingMethods as $method) {
-                $expectations[$method] = 'never';
-                $methods[] = $method;
-            }
-            $mock = $this->newPartialMock($className, $methods, $constructorArgs);
-            $this->setExpectations($mock, $expectations);
-        } else {
-            foreach ($missingMethods as $method) {
-                $expectations[] = [$method, 'never'];
-                $methods[] = $method;
-            }
-            $mock = $this->newPartialMock($className, $methods, $constructorArgs);
-            $this->setAtExpectations($mock, $expectations);
+        foreach ($missingMethods as $method) {
+            $expectations[$method] = 'never';
+            $methods[] = $method;
         }
+        $mock = $this->newPartialMock($className, $methods, $constructorArgs);
+        $this->setExpectations($mock, $expectations);
+
+        return $mock;
+    }
+
+    protected function newPartialMockWithExpectationsList(
+        $className,
+        array $expectations,
+        array $constructorArgs = null): PHPUnit_Framework_MockObject_MockObject
+    {
+        $methods = array_unique(array_column($expectations, 0));
+        $missingMethods = $this->getMissingMethods($className, $methods);
+        foreach ($missingMethods as $method) {
+            $expectations[] = [$method, 'never'];
+            $methods[] = $method;
+        }
+        $mock = $this->newPartialMock($className, $methods, $constructorArgs);
+        $this->setAtExpectations($mock, $expectations);
 
         return $mock;
     }
@@ -47,8 +62,9 @@ trait MockWithExpectationsTrait
     protected function newPartialMock(
         $className,
         array $methods = [],
-        array $constructorArgs = null)
+        array $constructorArgs = null): PHPUnit_Framework_MockObject_MockObject
     {
+        /** @var PHPUnit_Framework_MockObject_MockBuilder $builder */
         $builder = $this->getMockBuilder($className)
             ->disableOriginalClone()
             ->disableArgumentCloning()
@@ -80,13 +96,12 @@ trait MockWithExpectationsTrait
         PHPUnit_Framework_MockObject_MockObject $mock,
         array $atExpectations)
     {
-        $at = 0;
-        foreach ($atExpectations as $atExpectation) {
-            list($method, $expectation) = $atExpectation;
+        $index = 0;
+        foreach ($atExpectations as list($method, $expectation)) {
             if ($expectation === 'never') {
                 $mock->expects($this->never())->method($method);
             } elseif (is_array($expectation)) {
-                $expectation['invoked'] = $this->at($at++);
+                $expectation['invoked'] = $this->at($index++);
                 $this->setExpectation($mock, $method, $expectation);
             } else {
                 throw new Exception("setAtExpectations cannot understand expectation '$expectation'");
@@ -108,51 +123,54 @@ trait MockWithExpectationsTrait
         } else {
             $matcher = $this->once();
         }
-        $params = isset($expectation['params']) ? $expectation['params'] : [];
-        $result = isset($expectation['result']) ? $expectation['result'] : null;
+        $params = $expectation['params'] ?? [];
+        $result = $expectation['result'] ?? null;
         $builder = $mock->expects($matcher)->method($method);
         call_user_func_array([$builder, 'with'], $params);
         $builder->willReturn($result);
     }
 
-    /**
-     * @param $invoked
-     * @return PHPUnit_Framework_MockObject_Matcher_Invocation
-     */
-    protected function convertToMatcher($invoked)
+    protected function convertToMatcher($invoked): PHPUnit_Framework_MockObject_Matcher_Invocation
     {
         if (is_numeric($invoked)) {
             $times = (int) $invoked;
             if ($times === 0) {
                 return $this->never();
-            } elseif ($times === 1) {
-                return $this->once();
-            } else {
-                return $this->exactly($times);
             }
-        } elseif ($invoked === 'once') {
+            if ($times === 1) {
+                return $this->once();
+            }
+            return $this->exactly($times);
+        }
+        if ($invoked === 'once') {
             return $this->once();
-        } elseif ($invoked === 'any') {
+        }
+        if ($invoked === 'any') {
             return $this->any();
-        } elseif ($invoked === 'never') {
+        }
+        if ($invoked === 'never') {
             return $this->never();
-        } elseif ($invoked === 'atLeastOnce') {
+        }
+        if ($invoked === 'atLeastOnce') {
             return $this->atLeastOnce();
-        } elseif (preg_match('/(\w+)\s+(\d+)/', $invoked, $matches)) {
+        }
+        if (preg_match('/(\w+)\s+(\d+)/', $invoked, $matches)) {
             $method = $matches[1];
             $count = (int) $matches[2];
             if ($method === 'atLeast') {
                 return $this->atLeast($count);
-            } elseif ($method === 'exactly') {
+            }
+            if ($method === 'exactly') {
                 return $this->exactly($count);
-            } elseif ($method === 'atMost') {
+            }
+            if ($method === 'atMost') {
                 return $this->atMost($count);
             }
         }
         throw new Exception("convertToMatcher cannot convert '$invoked'");
     }
 
-    private function isAssociative(array $array)
+    private function isAssociative(array $array): bool
     {
         return array_keys($array) !== range(0, count($array) - 1);
     }
@@ -162,16 +180,18 @@ trait MockWithExpectationsTrait
         $reflection = new ReflectionClass($className);
 
         if ($reflection->isInterface()) {
-            $publicMethods = array_map(function (ReflectionMethod $m) {
-                return $m->name;
+            $publicMethods = array_map(function (ReflectionMethod $method) {
+                return $method->name;
             }, $reflection->getMethods(ReflectionMethod::IS_PUBLIC));
+
             return array_diff($publicMethods, $methods);
         }
 
         if ($reflection->isAbstract()) {
-            $abstractMethods = array_map(function(ReflectionMethod $m) {
-                return $m->name;
+            $abstractMethods = array_map(function(ReflectionMethod $method) {
+                return $method->name;
             }, $reflection->getMethods(ReflectionMethod::IS_ABSTRACT));
+
             return array_diff($abstractMethods, $methods);
         }
 

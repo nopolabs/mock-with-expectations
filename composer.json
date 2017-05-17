@@ -1,9 +1,7 @@
 {
     "name": "nopolabs/mock-with-expectations",
     "description": "Helper trait for phpunit testing",
-    "require-dev": {
-        "phpunit/phpunit": "^6.0"
-    },
+    "require-dev": {},
     "license": "MIT",
     "authors": [
         {
@@ -11,7 +9,11 @@
             "email": "dan@nopolabs.com"
         }
     ],
-    "require": {},
+    "require": {
+        "php": ">=7.0",
+        "phpunit/phpunit": "^6.0",
+        "roave/security-advisories": "dev-master"
+    },
     "autoload": {
         "psr-4": {
             "Nopolabs\\Test\\": "src"

@@ -116,6 +116,19 @@ class MockWithExpectationsTraitTest extends TestCase
         }
     }
 
+    public function testSetAtExpectationForMethodWithNoParamsNoResultNoThrows()
+    {
+        $myTest = $this->createMock(MyClass::class);
+
+        $this->setAtExpectations($myTest, [['fun'], ['fun'], ['fun']]);
+
+        $myTest->expects($this->exactly(3))->method('fun');
+
+        $myTest->fun();
+        $myTest->fun();
+        $myTest->fun();
+    }
+
     public function testNewPartialMockWithExpectations_interfaceMissingMethods()
     {
         $mock = $this->newPartialMockWithExpectations(TestInterface::class, [

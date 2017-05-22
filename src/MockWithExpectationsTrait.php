@@ -97,7 +97,9 @@ trait MockWithExpectationsTrait
         array $atExpectations)
     {
         $index = 0;
-        foreach ($atExpectations as list($method, $expectation)) {
+        foreach ($atExpectations as $atExpectation) {
+            array_push($atExpectation, []);
+            list($method, $expectation) = $atExpectation;
             if ($expectation === 'never') {
                 $mock->expects($this->never())->method($method);
             } elseif (is_array($expectation)) {

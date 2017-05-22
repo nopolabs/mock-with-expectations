@@ -160,41 +160,57 @@ trait MockWithExpectationsTrait
     protected function convertToMatcher($invoked): PHPUnit_Framework_MockObject_Matcher_Invocation
     {
         if (is_numeric($invoked)) {
-            $times = (int) $invoked;
-            if ($times === 0) {
-                return $this->never();
-            }
-            if ($times === 1) {
-                return $this->once();
-            }
-            return $this->exactly($times);
+            return $this->convertNumeric($invoked);
         }
-        if ($invoked === 'once') {
-            return $this->once();
-        }
-        if ($invoked === 'any') {
-            return $this->any();
-        }
-        if ($invoked === 'never') {
-            return $this->never();
-        }
-        if ($invoked === 'atLeastOnce') {
-            return $this->atLeastOnce();
-        }
-        if (preg_match('/(\w+)\s+(\d+)/', $invoked, $matches)) {
-            $method = $matches[1];
-            $count = (int) $matches[2];
-            if ($method === 'atLeast') {
-                return $this->atLeast($count);
+        if (preg_match("/(?'method'\w+)(?:\s+(?'count'\d+))?/", $invoked, $matches)) {
+            if (isset($matches['count'])) {
+                return $this->convertTwoWords($matches['method'], (int)$matches['count']);
             }
-            if ($method === 'exactly') {
-                return $this->exactly($count);
-            }
-            if ($method === 'atMost') {
-                return $this->atMost($count);
-            }
+            return $this->convertOneWord($matches['method']);
         }
         throw new Exception("convertToMatcher cannot convert '$invoked'");
+    }
+
+    protected function convertNumeric(int $times): PHPUnit_Framework_MockObject_Matcher_Invocation
+    {
+        if ($times === 0) {
+            return $this->never();
+        }
+        if ($times === 1) {
+            return $this->once();
+        }
+        return $this->exactly($times);
+    }
+
+    protected function convertOneWord(string $method): PHPUnit_Framework_MockObject_Matcher_Invocation
+    {
+        if ($method === 'once') {
+            return $this->once();
+        }
+        if ($method === 'any') {
+            return $this->any();
+        }
+        if ($method === 'never') {
+            return $this->never();
+        }
+        if ($method === 'atLeastOnce') {
+            return $this->atLeastOnce();
+        }
+        throw new Exception("convertOneWord cannot convert '$method'");
+    }
+
+    protected function convertTwoWords(string $method, int $count): PHPUnit_Framework_MockObject_Matcher_Invocation
+    {
+        if ($method === 'atLeast') {
+            return $this->atLeast($count);
+        }
+        if ($method === 'exactly') {
+            return $this->exactly($count);
+        }
+        if ($method === 'atMost') {
+            return $this->atMost($count);
+        }
+        throw new Exception("convertTwoWords cannot convert '$method $count'");
     }
 
     private function isAssociative(array $array): bool

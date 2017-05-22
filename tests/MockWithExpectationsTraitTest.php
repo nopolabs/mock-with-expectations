@@ -1,6 +1,7 @@
 <?php
 namespace Nopolabs\Test\Tests;
 
+use Exception;
 use Nopolabs\Test\MockWithExpectationsTrait;
 use PHPUnit\Framework\TestCase;
 
@@ -98,6 +99,20 @@ class MockWithExpectationsTraitTest extends TestCase
             }
 
             $this->assertSame($expected['result'], $actual);
+        }
+    }
+
+    public function testSetExpectationWithThrows()
+    {
+        $myTest = $this->createMock(MyClass::class);
+
+        $this->setExpectation($myTest, 'fun', ['throws' => new Exception('boom!')]);
+
+        try {
+            $myTest->fun();
+            $this->fail('expected an exception');
+        } catch (Exception $e) {
+            $this->assertEquals('boom!', $e->getMessage());
         }
     }
 

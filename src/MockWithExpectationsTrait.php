@@ -123,11 +123,20 @@ trait MockWithExpectationsTrait
         } else {
             $matcher = $this->once();
         }
-        $params = $expectation['params'] ?? [];
-        $result = $expectation['result'] ?? null;
+
         $builder = $mock->expects($matcher)->method($method);
-        call_user_func_array([$builder, 'with'], $params);
-        $builder->willReturn($result);
+
+        if ($params = $expectation['params'] ?? null) {
+            call_user_func_array([$builder, 'with'], $params);
+        }
+
+        if ($result = $expectation['result'] ?? null) {
+            $builder->willReturn($result);
+        }
+
+        if ($throws = $expectation['throws'] ?? null) {
+            $builder->willThrowException($throws);
+        }
     }
 
     protected function convertToMatcher($invoked): PHPUnit_Framework_MockObject_Matcher_Invocation

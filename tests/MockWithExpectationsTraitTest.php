@@ -116,6 +116,30 @@ class MockWithExpectationsTraitTest extends TestCase
         }
     }
 
+    public function testSetExpectationParamsMustBeAnArray()
+    {
+        $myTest = $this->createMock(MyClass::class);
+
+        try {
+            $this->setExpectation($myTest, 'fun', ['params' => 'not a array']);
+            $this->fail('expected an exception');
+        } catch (Exception $e) {
+            $this->assertEquals("expected params to be an array, got 'not a array'", $e->getMessage());
+        }
+    }
+
+    public function testSetExpectationCannotHaveBothResultAndThrows()
+    {
+        $myTest = $this->createMock(MyClass::class);
+
+        try {
+            $this->setExpectation($myTest, 'fun', ['result' => true, 'throws' => new Exception()]);
+            $this->fail('expected an exception');
+        } catch (Exception $e) {
+            $this->assertEquals("cannot expect both 'result' and 'throws'", $e->getMessage());
+        }
+    }
+
     public function testSetAtExpectationForMethodWithNoParamsNoResultNoThrows()
     {
         $myTest = $this->createMock(MyClass::class);

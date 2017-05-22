@@ -126,17 +126,33 @@ trait MockWithExpectationsTrait
             $matcher = $this->once();
         }
 
+        $params = $expectation['params'] ?? null;
+        $result = $expectation['result'] ?? null;
+        $throws = $expectation['throws'] ?? null;
+
+        if ($params && !is_array($params)) {
+            throw new Exception("expected params to be an array, got '$params'");
+        }
+
+        if ($result && $throws) {
+            throw new Exception("cannot expect both 'result' and 'throws'");
+        }
+
+        $result = $expectation['result'] ?? null;
+
+        $throws = $expectation['throws'] ?? null;
+
         $builder = $mock->expects($matcher)->method($method);
 
-        if ($params = $expectation['params'] ?? null) {
+        if ($params) {
             call_user_func_array([$builder, 'with'], $params);
         }
 
-        if ($result = $expectation['result'] ?? null) {
+        if ($result) {
             $builder->willReturn($result);
         }
 
-        if ($throws = $expectation['throws'] ?? null) {
+        if ($throws) {
             $builder->willThrowException($throws);
         }
     }

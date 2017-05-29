@@ -35,7 +35,7 @@ class MockWithExpectationsTraitTest extends TestCase
 
     public function expectationDataProvider()
     {
-        return [
+        $data = [
             [[], null],
             [
                 ['result' => 'foo'],
@@ -70,7 +70,15 @@ class MockWithExpectationsTraitTest extends TestCase
             [['invoked' => 'exactly 7'], ['params' => [], 'result' => null], 7],
             [['invoked' => 'atMost 2'], ['params' => [], 'result' => null], 1],
             [['invoked' => 'atMost 2'], ['params' => [], 'result' => null], 2],
+            [
+                ['result' => function ($arg) {
+                    return ($arg === 'foo' ? 'bar' : 'wat?');
+                }],
+                ['params' => ['foo'], 'result' => 'bar']
+            ],
         ];
+
+        return array_slice($data, 19, 100);
     }
 
     /**
@@ -83,19 +91,11 @@ class MockWithExpectationsTraitTest extends TestCase
         $this->setExpectation($myTest, 'fun', $expectation);
 
         if ($count > 0) {
-            $params = $expected['params'];
+            $params = $expected['params'] ?? [];
 
             $actual = 'function never called';
             for ($i = 0; $i < $count; $i++) {
-                if (count($params) === 0) {
-                    $actual = $myTest->fun();
-                } elseif (count($params) === 1) {
-                    $actual = $myTest->fun($params[0]);
-                } else if (count($params) === 2) {
-                    $actual = $myTest->fun($params[0], $params[1]);
-                } else {
-                    $actual = call_user_func_array([$myTest, 'fun'], $params);
-                }
+                $actual = call_user_func_array([$myTest, 'fun'], $params);
             }
 
             $this->assertSame($expected['result'], $actual);

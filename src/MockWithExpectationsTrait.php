@@ -1,6 +1,7 @@
 <?php
 namespace Nopolabs\Test;
 
+use Closure;
 use PHPUnit\Framework\Exception;
 use PHPUnit_Framework_MockObject_Matcher_Invocation;
 use PHPUnit_Framework_MockObject_MockBuilder;
@@ -138,10 +139,6 @@ trait MockWithExpectationsTrait
             throw new Exception("cannot expect both 'result' and 'throws'");
         }
 
-        $result = $expectation['result'] ?? null;
-
-        $throws = $expectation['throws'] ?? null;
-
         $builder = $mock->expects($matcher)->method($method);
 
         if ($params) {
@@ -149,7 +146,11 @@ trait MockWithExpectationsTrait
         }
 
         if ($result) {
-            $builder->willReturn($result);
+            if ($result instanceof Closure) {
+                $builder->willReturnCallback($result);
+            } else {
+                $builder->willReturn($result);
+            }
         }
 
         if ($throws) {

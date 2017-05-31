@@ -140,6 +140,33 @@ class MockWithExpectationsTraitTest extends TestCase
         }
     }
 
+    public function expectationResultDataProvider()
+    {
+        return [
+            [null],
+            [false],
+            [0],
+            [[]],
+            [true],
+            [1],
+            ['hello'],
+            [1,2,3],
+        ];
+    }
+
+    /**
+     * @dataProvider expectationResultDataProvider
+     */
+    public function testSetExpectationResult($result)
+    {
+        $myTest = $this->createMock(MyClass::class);
+
+        $this->setExpectation($myTest, 'fun', ['result' => $result]);
+        $myTest->expects($this->exactly(1))->method('fun');
+
+        $this->assertSame($result, $myTest->fun());
+    }
+
     public function testSetAtExpectationForMethodWithNoParamsNoResultNoThrows()
     {
         $myTest = $this->createMock(MyClass::class);

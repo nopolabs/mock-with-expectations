@@ -131,21 +131,21 @@ trait MockWithExpectationsTrait
         $result = $expectation['result'] ?? null;
         $throws = $expectation['throws'] ?? null;
 
-        if ($params && !is_array($params)) {
+        if ($params !== null && !is_array($params)) {
             throw new Exception("expected params to be an array, got '$params'");
         }
 
-        if ($result && $throws) {
+        if ($result !== null && $throws !== null) {
             throw new Exception("cannot expect both 'result' and 'throws'");
         }
 
         $builder = $mock->expects($matcher)->method($method);
 
-        if ($params) {
+        if ($params !== null) {
             call_user_func_array([$builder, 'with'], $params);
         }
 
-        if ($result) {
+        if ($result !== null) {
             if ($result instanceof Closure) {
                 $builder->willReturnCallback($result);
             } else {
@@ -153,7 +153,7 @@ trait MockWithExpectationsTrait
             }
         }
 
-        if ($throws) {
+        if ($throws !== null) {
             $builder->willThrowException($throws);
         }
     }

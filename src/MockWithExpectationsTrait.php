@@ -124,7 +124,7 @@ trait MockWithExpectationsTrait
                 $matcher = $this->convertToMatcher($expectation['invoked']);
             }
         } else {
-            $matcher = $this->once();
+            $matcher = $this->any();
         }
 
         $params = $expectation['params'] ?? null;

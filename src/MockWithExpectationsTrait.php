@@ -117,16 +117,7 @@ trait MockWithExpectationsTrait
         $method,
         array $expectation)
     {
-        if (isset($expectation['invoked'])) {
-            if ($expectation['invoked'] instanceof PHPUnit_Framework_MockObject_Matcher_Invocation) {
-                $matcher = $expectation['invoked'];
-            } else {
-                $matcher = $this->convertToMatcher($expectation['invoked']);
-            }
-        } else {
-            $matcher = $this->any();
-        }
-
+        $invoked = $this->getInvoked($expectation);
         $params = $expectation['params'] ?? null;
         $result = $expectation['result'] ?? null;
         $throws = $expectation['throws'] ?? null;
@@ -139,7 +130,7 @@ trait MockWithExpectationsTrait
             throw new Exception("cannot expect both 'result' and 'throws'");
         }
 
-        $builder = $mock->expects($matcher)->method($method);
+        $builder = $mock->expects($invoked)->method($method);
 
         if ($params !== null) {
             call_user_func_array([$builder, 'with'], $params);
@@ -158,7 +149,22 @@ trait MockWithExpectationsTrait
         }
     }
 
-    protected function convertToMatcher($invoked): PHPUnit_Framework_MockObject_Matcher_Invocation
+    protected function getInvoked(array $expectation): PHPUnit_Framework_MockObject_Matcher_Invocation
+    {
+        if (isset($expectation['invoked'])) {
+            if ($expectation['invoked'] instanceof PHPUnit_Framework_MockObject_Matcher_Invocation) {
+                $invoked = $expectation['invoked'];
+            } else {
+                $invoked = $this->convertToInvocation($expectation['invoked']);
+            }
+        } else {
+            $invoked = $this->any();
+        }
+
+        return $invoked;
+    }
+
+    protected function convertToInvocation($invoked): PHPUnit_Framework_MockObject_Matcher_Invocation
     {
         if (is_numeric($invoked)) {
             return $this->convertNumeric($invoked);

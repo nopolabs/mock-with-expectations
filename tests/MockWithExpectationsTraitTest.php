@@ -4,6 +4,7 @@ namespace Nopolabs\Test\Tests;
 use Exception;
 use Nopolabs\Test\MockWithExpectationsTrait;
 use PHPUnit\Framework\TestCase;
+use PHPUnit_Framework_MockObject_Matcher_Invocation;
 
 class MockWithExpectationsTraitTest extends TestCase
 {
@@ -216,7 +217,7 @@ class MockWithExpectationsTraitTest extends TestCase
         $this->assertSame('hello', $mock->method1());
     }
 
-    public function convertToMatcherDataProvider()
+    public function convertToInvocationDataProvider()
     {
         return [
             [0, $this->never()],
@@ -242,8 +243,33 @@ class MockWithExpectationsTraitTest extends TestCase
      * @param $invoked
      * @param $expected
      */
-    public function testConvertToMatcher($invoked, $expected)
+    public function testConvertToInvocation($invoked, $expected)
     {
-        $this->assertEquals($expected, $this->convertToMatcher($invoked));
+        $this->assertEquals($expected, $this->convertToInvocation($invoked));
+    }
+
+    public function invokedDataProvider() : array
+    {
+        $data = array_map(
+            function($args) {
+                list($invoked, $expected) = $args;
+                return [['invoked' => $invoked], $expected];
+            },
+            $this->convertToInvocationDataProvider()
+        );
+        $data[] = [[], $this->any()];
+        $data[] = [['invoked' => $this->at(17)], $this->at(17)];
+
+        return $data;
+    }
+
+    /**
+     * @dataProvider invokedDataProvider
+     */
+    public function testGetInvoked(array $expectation, PHPUnit_Framework_MockObject_Matcher_Invocation $expected)
+    {
+        $invoked = $this->getInvoked($expectation);
+
+        $this->assertEquals($expected, $invoked);
     }
 }

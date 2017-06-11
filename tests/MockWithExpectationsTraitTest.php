@@ -239,7 +239,7 @@ class MockWithExpectationsTraitTest extends TestCase
     }
 
     /**
-     * @dataProvider convertToMatcherDataProvider
+     * @dataProvider convertToInvocationDataProvider
      * @param $invoked
      * @param $expected
      */

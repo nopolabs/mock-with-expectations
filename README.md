@@ -85,8 +85,8 @@ public function testRefundOrder()
     $orderId = 1337;
     $order = $this->createMock(Order::class);
     $manager = $this->newPartialMockWithExpectations(OrderManager::class, [
-        ['findOrder', ['params' => [$orderId], 'result' => $order],
-        ['isRefundable', ['params' => [$order], 'result' => true]
+        ['findOrder', ['params' => [$orderId], 'result' => $order]],
+        ['isRefundable', ['params' => [$order], 'result' => true]],
         ['refund', ['params' => [$order]]],
     ]);
     $manager->refundOrder($orderId);
@@ -97,8 +97,8 @@ public function testRefundOrderNotRefundable()
     $orderId = 1337;
     $order = $this->createMock(Order::class);
     $manager = $this->newPartialMockWithExpectations(OrderManager::class, [
-        ['findOrder', ['params' => [$orderId], 'result' => $order],
-        ['isRefundable', ['params' => [$order], 'result' => false]
+        ['findOrder', ['params' => [$orderId], 'result' => $order]],
+        ['isRefundable', ['params' => [$order], 'result' => false]],
         ['refund', 'never'],
     ]);
     $manager->refundOrder($orderId);

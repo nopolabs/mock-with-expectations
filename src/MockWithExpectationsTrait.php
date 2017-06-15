@@ -31,12 +31,7 @@ trait MockWithExpectationsTrait
         array $expectations,
         array $constructorArgs = null): PHPUnit_Framework_MockObject_MockObject
     {
-        $methods = array_unique(array_keys($expectations));
-        $missingMethods = $this->getMissingMethods($className, $methods);
-        foreach ($missingMethods as $method) {
-            $expectations[$method] = 'never';
-            $methods[] = $method;
-        }
+        $methods = $this->addMissingMethods($className, array_unique(array_keys($expectations)));
         $mock = $this->newPartialMock($className, $methods, $constructorArgs);
         $this->setExpectations($mock, $expectations);
 
@@ -48,12 +43,7 @@ trait MockWithExpectationsTrait
         array $expectations,
         array $constructorArgs = null): PHPUnit_Framework_MockObject_MockObject
     {
-        $methods = array_unique(array_column($expectations, 0));
-        $missingMethods = $this->getMissingMethods($className, $methods);
-        foreach ($missingMethods as $method) {
-            $expectations[] = [$method, 'never'];
-            $methods[] = $method;
-        }
+        $methods = $this->addMissingMethods($className, array_unique(array_column($expectations, 0)));
         $mock = $this->newPartialMock($className, $methods, $constructorArgs);
         $this->setAtExpectations($mock, $expectations);
 
@@ -223,6 +213,17 @@ trait MockWithExpectationsTrait
     private function isAssociative(array $array): bool
     {
         return array_keys($array) !== range(0, count($array) - 1);
+    }
+
+    private function addMissingMethods($className, array $methods) : array
+    {
+        $missingMethods = $this->getMissingMethods($className, $methods);
+        foreach ($missingMethods as $method) {
+            $expectations[$method] = 'never';
+            $methods[] = $method;
+        }
+
+        return $methods;
     }
 
     private function getMissingMethods($className, array $methods) : array

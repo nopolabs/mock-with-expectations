@@ -1,9 +1,10 @@
 # MockWithExpectationsTrait
 
 [![Build Status](https://travis-ci.org/nopolabs/mock-with-expectations.svg?branch=master)](https://travis-ci.org/nopolabs/mock-with-expectations)
+[![Code Climate](https://codeclimate.com/github/nopolabs/mock-with-expectations/badges/gpa.svg)](https://codeclimate.com/github/nopolabs/mock-with-expectations)
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/nopolabs/mock-with-expectations/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/nopolabs/mock-with-expectations/?branch=master)
 [![License](https://poser.pugx.org/nopolabs/mock-with-expectations/license)](https://packagist.org/packages/nopolabs/mock-with-expectations)
 [![Latest Stable Version](https://poser.pugx.org/nopolabs/mock-with-expectations/v/stable)](https://packagist.org/packages/nopolabs/mock-with-expectations)
-[![Code Climate](https://codeclimate.com/github/nopolabs/mock-with-expectations/badges/gpa.svg)](https://codeclimate.com/github/nopolabs/mock-with-expectations)
 
 This trait contains some helper methods to be used in a sub-class of
 `PHPUnit\Framework\TestCase`.

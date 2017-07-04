@@ -45,7 +45,7 @@ class MockWithExpectationsTraitTest extends TestCase
         $this->assertEquals('z', $myTest->myFunction('x'));
         $this->assertEquals('z', $myTest->myFunction('x'));
     }
-    
+
     public function expectationDataProvider()
     {
         $data = [

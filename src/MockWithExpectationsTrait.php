@@ -14,40 +14,30 @@ use ReflectionMethod;
  */
 trait MockWithExpectationsTrait
 {
+    // abstract methods implemented by PHPUnit\Framework\TestCase
+    abstract public function getMockBuilder($className);
+    abstract public static function any();
+    abstract public static function at($index);
+    abstract public static function atLeast($requiredInvocations);
+    abstract public static function atLeastOnce();
+    abstract public static function atMost($allowedInvocations);
+    abstract public static function exactly($count);
+    abstract public static function never();
+    abstract public static function once();
+
     protected function newPartialMockWithExpectations(
         $className,
         array $expectations = [],
         array $constructorArgs = null): PHPUnit_Framework_MockObject_MockObject
     {
+        $methods = $this->getMethodsToMock($className, $expectations);
+        $mock = $this->newPartialMock($className, $methods, $constructorArgs);
+
         if ($this->isAssociative($expectations)) {
-            return $this->newPartialMockWithExpectationsMap($className, $expectations, $constructorArgs);
+            return $this->setExpectations($mock, $expectations);
         }
 
-        return $this->newPartialMockWithExpectationsList($className, $expectations, $constructorArgs);
-    }
-
-    protected function newPartialMockWithExpectationsMap(
-        $className,
-        array $expectations,
-        array $constructorArgs = null): PHPUnit_Framework_MockObject_MockObject
-    {
-        $methods = $this->addMissingMethods($className, array_unique(array_keys($expectations)));
-        $mock = $this->newPartialMock($className, $methods, $constructorArgs);
-        $this->setExpectations($mock, $expectations);
-
-        return $mock;
-    }
-
-    protected function newPartialMockWithExpectationsList(
-        $className,
-        array $expectations,
-        array $constructorArgs = null): PHPUnit_Framework_MockObject_MockObject
-    {
-        $methods = $this->addMissingMethods($className, array_unique(array_column($expectations, 0)));
-        $mock = $this->newPartialMock($className, $methods, $constructorArgs);
-        $this->setAtExpectations($mock, $expectations);
-
-        return $mock;
+        return $this->setAtExpectations($mock, $expectations);
     }
 
     protected function newPartialMock(
@@ -73,7 +63,8 @@ trait MockWithExpectationsTrait
 
     protected function setExpectations(
         PHPUnit_Framework_MockObject_MockObject $mock,
-        array $expectations)
+        array $expectations
+    ) : PHPUnit_Framework_MockObject_MockObject
     {
         foreach ($expectations as $method => $expectation) {
             if (!is_array($expectation)) {
@@ -81,11 +72,14 @@ trait MockWithExpectationsTrait
             }
             $this->setExpectation($mock, $method, $expectation);
         }
+
+        return $mock;
     }
 
     protected function setAtExpectations(
         PHPUnit_Framework_MockObject_MockObject $mock,
-        array $atExpectations)
+        array $atExpectations
+    ) : PHPUnit_Framework_MockObject_MockObject
     {
         $index = 0;
         foreach ($atExpectations as $atExpectation) {
@@ -100,6 +94,8 @@ trait MockWithExpectationsTrait
                 throw new Exception("setAtExpectations cannot understand expectation '$expectation'");
             }
         }
+
+        return $mock;
     }
 
     protected function setExpectation(
@@ -215,11 +211,19 @@ trait MockWithExpectationsTrait
         return array_keys($array) !== range(0, count($array) - 1);
     }
 
+    private function getMethodsToMock($className, array $expectations)
+    {
+        $expectedMethods = $this->isAssociative($expectations)
+            ? array_unique(array_keys($expectations))
+            : array_unique(array_column($expectations, 0));
+
+        return $this->addMissingMethods($className, $expectedMethods);
+    }
+
     private function addMissingMethods($className, array $methods) : array
     {
         $missingMethods = $this->getMissingMethods($className, $methods);
         foreach ($missingMethods as $method) {
-            $expectations[$method] = 'never';
             $methods[] = $method;
         }
 

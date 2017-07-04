@@ -241,8 +241,8 @@ trait MockWithExpectationsTrait
             ? ReflectionMethod::IS_PUBLIC
             : ReflectionMethod::IS_ABSTRACT;
 
-         return array_map(function(ReflectionMethod $method) {
-             return $method->name;
-         }, $reflection->getMethods($filter));
+        return array_map(function(ReflectionMethod $method) {
+            return $method->name;
+        }, $reflection->getMethods($filter));
     }
 }

@@ -3,8 +3,10 @@ namespace Nopolabs\Test\Tests;
 
 use Exception;
 use Nopolabs\Test\MockWithExpectationsTrait;
+use PHPUnit\Framework\ExpectationFailedException;
 use PHPUnit\Framework\TestCase;
 use PHPUnit_Framework_MockObject_Matcher_Invocation;
+use Throwable;
 
 class MockWithExpectationsTraitTest extends TestCase
 {
@@ -20,6 +22,15 @@ class MockWithExpectationsTraitTest extends TestCase
         ]);
 
         $this->assertEquals('z', $myTest->myFunction('x'));
+        try {
+            $this->assertEquals('z', $myTest->myFunction('x'));
+            $this->fail('Expected an ExpectationFailedException');
+        } catch (ExpectationFailedException $exception) {
+            $this->assertEquals(
+                "Failed asserting that null matches expected 'z'.",
+                $exception->getMessage()
+            );
+        }
     }
 
     public function testExpectations()
@@ -32,8 +43,9 @@ class MockWithExpectationsTraitTest extends TestCase
         ]);
 
         $this->assertEquals('z', $myTest->myFunction('x'));
+        $this->assertEquals('z', $myTest->myFunction('x'));
     }
-
+    
     public function expectationDataProvider()
     {
         $data = [

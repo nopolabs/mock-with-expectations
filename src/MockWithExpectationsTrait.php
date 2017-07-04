@@ -213,43 +213,36 @@ trait MockWithExpectationsTrait
 
     private function getMethodsToMock($className, array $expectations)
     {
-        $expectedMethods = $this->isAssociative($expectations)
-            ? array_unique(array_keys($expectations))
-            : array_unique(array_column($expectations, 0));
+        $expectedMethods = $this->getExpectedMethods($expectations);
 
-        return $this->addMissingMethods($className, $expectedMethods);
+        $unimplementedMethods = $this->getUnimplementedMethods($className);
+
+        return array_unique(array_merge($expectedMethods, $unimplementedMethods));
     }
 
-    private function addMissingMethods($className, array $methods) : array
+    private function getExpectedMethods(array $expectations) : array
     {
-        $missingMethods = $this->getMissingMethods($className, $methods);
-        foreach ($missingMethods as $method) {
-            $methods[] = $method;
+        if ($this->isAssociative($expectations)) {
+            return array_unique(array_keys($expectations));
         }
 
-        return $methods;
+        return array_unique(array_column($expectations, 0));
     }
 
-    private function getMissingMethods($className, array $methods) : array
+    private function getUnimplementedMethods($className) : array
     {
         $reflection = new ReflectionClass($className);
 
-        if ($reflection->isInterface()) {
-            $publicMethods = array_map(function (ReflectionMethod $method) {
-                return $method->name;
-            }, $reflection->getMethods(ReflectionMethod::IS_PUBLIC));
-
-            return array_diff($publicMethods, $methods);
+        if (!$reflection->isInterface() && !$reflection->isAbstract()) {
+            return [];
         }
 
-        if ($reflection->isAbstract()) {
-            $abstractMethods = array_map(function(ReflectionMethod $method) {
-                return $method->name;
-            }, $reflection->getMethods(ReflectionMethod::IS_ABSTRACT));
+        $filter = $reflection->isInterface()
+            ? ReflectionMethod::IS_PUBLIC
+            : ReflectionMethod::IS_ABSTRACT;
 
-            return array_diff($abstractMethods, $methods);
-        }
-
-        return [];
+         return array_map(function(ReflectionMethod $method) {
+             return $method->name;
+         }, $reflection->getMethods($filter));
     }
 }

@@ -161,7 +161,7 @@ class OrderManager
     public function refundOrder($orderId)
     {
         $order = $this->orderManagement->findOrder($orderId);
-        if ($order->orderManagement->isRefundable()) {
+        if ($this->orderManagement->isRefundable($order)) {
             $this->orderManagement->refund($order);
         }
     }

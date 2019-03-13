@@ -52,7 +52,7 @@ class Expectation
         }
 
         if ($this->throws !== null) {
-            $builder = $this->mockThrows($builder, $this->throws);
+            $this->mockThrows($builder, $this->throws);
         }
     }
 

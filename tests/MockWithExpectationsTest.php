@@ -1,52 +1,79 @@
 <?php
-
-declare (strict_types=1);
+declare(strict_types=1);
 
 namespace Nopolabs\Test\Tests;
 
 use Exception;
-use Nopolabs\Test\MockWithExpectations2Trait;
+use Nopolabs\Test\MockWithExpectations;
+use Nopolabs\Test\TestException;
 use PHPUnit\Framework\TestCase;
-use PHPUnit_Framework_MockObject_Matcher_Invocation;
+use PHPUnit_Framework_MockObject_MockObject;
 
-class MockWithExpectations2TraitTest extends TestCase
+class MockWithExpectationsTest extends TestCase
 {
-    use MockWithExpectations2Trait;
+    /** @var TestCase|PHPUnit_Framework_MockObject_MockObject */
+    private $testCase;
 
-    public function testExpectationsList()
+    /** @var MockWithExpectations */
+    private $mockWithExpectations;
+
+    protected function setUp() : void
+    {
+        $this->testCase = $this->createMock(TestCase::class);
+        $this->mockWithExpectations = new MockWithExpectations($this->testCase);
+
+        $this->testCase->expects($this->any())
+            ->method('getMockBuilder')
+            ->willReturnCallback(function(string $className) {
+                return $this->getMockBuilder($className);
+            });
+        }
+
+    public function mockWithExpectationsDataProvider() : array
+    {
+        return [
+            [[
+                ['a', ['x'], 'y'],
+                ['b', ['y'], 'z'],
+                ['c', 'never'],
+            ]],
+            [[
+                ['a'],
+                ['b', [$this->anything()], 'z'],
+                ['c', 'never'],
+            ]],
+            [[
+                ['a', 'params' => ['x'], 'y'],
+                ['b', ['y'], 'result' => 'z'],
+                ['method' => 'c', 'never'],
+            ]],
+            [[
+                ['a', 'params' => ['x'], 'y'],
+                ['b', ['y'], 'result' => 'z'],
+                ['c', 'invoked' => 'never'],
+            ]],
+            [[
+                'c' => 'never',
+                'b' => [['y'], 'z'],
+                'a' => [['x'], 'y'],
+            ]],
+            [[
+                'c' => ['invoked' => 'never'],
+                'b' => ['params' => ['y'], 'z'],
+                'a' => [['x'], 'result' => 'y'],
+            ]],
+        ];
+    }
+
+    /**
+     * @dataProvider mockWithExpectationsDataProvider
+     */
+    public function testMockWithExpectations(array $expectations) : void
     {
         /** @var MyClass $myTest */
-        $myTest = $this->mockWithExpectations(MyClass::class, [
-            ['a', ['x'], 'y'],
-            ['b', ['y'], 'z'],
-            ['c', 'never'],
-        ]);
+        $myTest = $this->mockWithExpectations->mockWithExpectations(MyClass::class, $expectations);
 
         $this->assertSame('z', $myTest->myFunction('x'));
-    }
-
-    public function testExpectationsListLoosely()
-    {
-        /** @var MyClass $myTest */
-        $myTest = $this->mockWithExpectations(MyClass::class, [
-            ['a'],
-            ['b', [$this->anything()], 'z'],
-            ['c', 'never'],
-        ]);
-
-        $this->assertEquals('z', $myTest->myFunction('x'));
-    }
-
-    public function testExpectationsMap()
-    {
-        /** @var MyClass $myTest */
-        $myTest = $this->mockWithExpectations(MyClass::class, [
-            'c' => 'never',
-            'b' => [['y'], 'z'],
-            'a' => [['x'], 'y'],
-        ]);
-
-        $this->assertEquals('z', $myTest->myFunction('x'));
     }
 
     public function expectationDataProvider()
@@ -121,7 +148,7 @@ class MockWithExpectations2TraitTest extends TestCase
     {
         $mock = $this->createMock(MyClass::class);
 
-        $this->setExpectation($mock, $expectation);
+        $this->mockWithExpectations->setExpectation($mock, $expectation);
 
         if ($count > 0) {
             $params = $expected['params'] ?? [];
@@ -138,22 +165,18 @@ class MockWithExpectations2TraitTest extends TestCase
     public function testSetExpectationWithThrows()
     {
         $mock = $this->createMock(MyClass::class);
+        $this->expectExceptionMessage('boom!');
 
-        $this->setExpectation($mock, ['fun', 'throws' => new Exception('boom!')]);
+        $this->mockWithExpectations->setExpectation($mock, ['fun', 'throws' => new Exception('boom!')]);
 
-        try {
-            $mock->fun();
-            $this->fail('expected an exception');
-        } catch (Exception $e) {
-            $this->assertEquals('boom!', $e->getMessage());
-        }
+        $mock->fun();
     }
 
     public function testSetExpectationParamsArrayCasting()
     {
         $mock = $this->createMock(MyClass::class);
 
-        $this->setExpectation($mock, ['fun', 'not an array', 42]);
+        $this->mockWithExpectations->setExpectation($mock, ['fun', 'not an array', 42]);
 
         $this->assertSame(42, $mock->fun('not an array'));
     }
@@ -161,13 +184,10 @@ class MockWithExpectations2TraitTest extends TestCase
     public function testSetExpectationCannotHaveBothResultAndThrows()
     {
         $mock = $this->createMock(MyClass::class);
+        $this->expectException(TestException::class);
+        $this->expectExceptionMessage("cannot expect both 'result' and 'throws'");
 
-        try {
-            $this->setExpectation($mock, ['fun', 'result' => true, 'throws' => new Exception()]);
-            $this->fail('expected an exception');
-        } catch (Exception $e) {
-            $this->assertEquals("cannot expect both 'result' and 'throws'", $e->getMessage());
-        }
+        $this->mockWithExpectations->setExpectation($mock, ['fun', 'result' => true, 'throws' => new Exception()]);
     }
 
     public function expectationResultDataProvider()
@@ -191,57 +211,56 @@ class MockWithExpectations2TraitTest extends TestCase
     {
         $mock = $this->createMock(MyClass::class);
 
-        $this->setExpectation($mock, ['fun', [], $result]);
+        $this->mockWithExpectations->setExpectation($mock, ['fun', [], $result]);
         $mock->expects($this->exactly(1))->method('fun');
 
         $this->assertSame($result, $mock->fun());
     }
 
-    public function testSetAtExpectationForMethodWithNoParamsNoResultNoThrows()
+    public function testSetExpectations() : void
     {
+        $expectations = [
+            ['fun', ['foo', 2], 'bar', 'invoked' => $this->at(0)],
+            ['fun', ['foo'], 'baz', 'invoked' => $this->at(1)],
+            ['fun', ['bloop'], 'throws' => new Exception('bloop'), 'invoked' => $this->at(2)],
+        ];
+
         $mock = $this->createMock(MyClass::class);
 
-        $this->setExpectations($mock, [['fun'], ['fun'], ['fun']]);
+        $this->mockWithExpectations->setExpectations($mock, $expectations);
 
-        $mock->expects($this->exactly(3))->method('fun');
+        $this->assertSame('bar', $mock->fun('foo', 2));
+        $this->assertSame('baz', $mock->fun('foo'));
 
-        $mock->fun();
-        $mock->fun();
-        $mock->fun();
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('bloop');
+        $mock->fun('bloop');
     }
 
-    public function testMockWithExpectations_interfaceMissingMethods()
+    public function missingMethodsDataProvider() : array
     {
-        $mock = $this->mockWithExpectations(TestInterface::class, [
-            'method1' => ['result' => 'hello'],
-        ]);
-
-        $this->assertSame('hello', $mock->method1());
+        return [
+            [ TestInterface::class, [
+                'method1' => ['result' => 'hello'],
+            ]],
+            [ TestInterface::class, [
+                ['method1', 'result' => 'hello'],
+            ]],
+            [ TestAbstractClass::class, [
+                'method1' => ['result' => 'hello'],
+            ]],
+            [ TestAbstractClass::class, [
+                ['method1', 'result' => 'hello'],
+            ]],
+        ];
     }
 
-    public function testMockWithExpectations_interfaceMissingMethodsAt()
+    /**
+     * @dataProvider missingMethodsDataProvider
+     */
+    public function testMissingMethods(string $className, array $expectations) : void
     {
-        $mock = $this->mockWithExpectations(TestInterface::class, [
-            ['method1', 'result' => 'hello'],
-        ]);
-
-        $this->assertSame('hello', $mock->method1());
-    }
-
-    public function testMockWithExpectations_abstractMissingMethods()
-    {
-        $mock = $this->mockWithExpectations(TestAbstractClass::class, [
-            'method1' => ['result' => 'hello'],
-        ]);
-
-        $this->assertSame('hello', $mock->method1());
-    }
-
-    public function testMockWithExpectations_abstractMissingMethodsAt()
-    {
-        $mock = $this->mockWithExpectations(TestAbstractClass::class, [
-            ['method1', 'result' => 'hello'],
-        ]);
+        $mock = $this->mockWithExpectations->mockWithExpectations($className, $expectations);
 
         $this->assertSame('hello', $mock->method1());
     }

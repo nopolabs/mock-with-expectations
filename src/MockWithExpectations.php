@@ -1,23 +1,26 @@
 <?php
-declare (strict_types=1);
+declare(strict_types=1);
 
 namespace Nopolabs\Test;
 
+use PHPUnit\Framework\TestCase;
 use PHPUnit_Framework_MockObject_MockBuilder;
 use PHPUnit_Framework_MockObject_MockObject;
 use ReflectionClass;
 use ReflectionMethod;
 
-/**
- * This trait expects to be used in a sub-class of PHPUnit\Framework\TestCase
- */
-trait MockWithExpectations2Trait
+class MockWithExpectations
 {
-    // implemented by PHPUnit\Framework\TestCase
-    abstract public function getMockBuilder($className);
+    /** @var TestCase */
+    private $testCase;
 
-    protected function mockWithExpectations(
-        $className,
+    public function __construct(TestCase $testCase)
+    {
+        $this->testCase = $testCase;
+    }
+
+    public function mockWithExpectations(
+        string $className,
         array $expectations = [],
         array $constructorArgs = null): PHPUnit_Framework_MockObject_MockObject
     {
@@ -26,14 +29,34 @@ trait MockWithExpectations2Trait
         return $this->newPartialMockWithExpectations($className, $expectations, $constructorArgs);
     }
 
-    protected function prepareExpectation(array $expects) : Expectation
+    public function setExpectation(
+        PHPUnit_Framework_MockObject_MockObject $mock,
+        $expectation) : void
     {
-        list($method, $params, $result, $throws, $invoked) = $this->normalizeExpectations($expects);
+        if (!$expectation instanceof Expectation) {
+            $expectation = $this->prepareExpectation((array)$expectation);
+        }
+
+        $expectation->build($mock);
+    }
+
+    public function setExpectations(
+        PHPUnit_Framework_MockObject_MockObject $mock,
+        array $expectations)
+    {
+        foreach ($expectations as $expectation) {
+            $this->setExpectation($mock, $expectation);
+        }
+    }
+
+    private function prepareExpectation(array $expects) : Expectation
+    {
+        list($method, $params, $result, $throws, $invoked) = $this->normalizeExpectation($expects);
 
         return new Expectation($method, $params, $result, $throws, $invoked);
     }
 
-    protected function prepareExpectations(array $expectations) : array
+    private function prepareExpectations(array $expectations) : array
     {
         if ($this->isAssociative($expectations)) {
             return $this->prepareExpectationsMap($expectations);
@@ -42,7 +65,7 @@ trait MockWithExpectations2Trait
         return $this->prepareExpectationsList($expectations);
     }
 
-    protected function prepareExpectationsMap(array $map) : array
+    private function prepareExpectationsMap(array $map) : array
     {
         $expectations = [];
 
@@ -57,21 +80,25 @@ trait MockWithExpectations2Trait
         return $expectations;
     }
 
-    protected function prepareExpectationsList(array $list) : array
+    private function prepareExpectationsList(array $list) : array
     {
         $expectations = [];
 
         $index = 0;
-        foreach ($list as $expects) {
-            list($method, $params, $result, $throws, $invoked) = $this->normalizeExpectations($expects);
-            $invoked = $invoked ?? self::at($index++);
-            $expectations[] = new Expectation($method, $params, $result, $throws, $invoked);
+        foreach ($list as $expectation) {
+            if (!($expectation instanceof Expectation)) {
+                list($method, $params, $result, $throws, $invoked) = $this->normalizeExpectation((array)$expectation);
+                $invoked = $invoked ?? TestCase::at($index++);
+                $expectation = new Expectation($method, $params, $result, $throws, $invoked);
+            }
+
+            $expectations[] = $expectation;
         }
 
         return $expectations;
     }
 
-    protected function normalizeExpectations(array $expects) : array
+    private function normalizeExpectation(array $expects) : array
     {
         $method = $expects['method'] ?? null;
         $params = $expects['params'] ?? null;
@@ -101,7 +128,7 @@ trait MockWithExpectations2Trait
         return [$method, $params, $result, $throws, $invoked];
     }
 
-    protected function newPartialMockWithExpectations(
+    private function newPartialMockWithExpectations(
         $className,
         array $expectations,
         array $constructorArgs = null): PHPUnit_Framework_MockObject_MockObject
@@ -113,33 +140,13 @@ trait MockWithExpectations2Trait
         return $mock;
     }
 
-    protected function setExpectations(
-        PHPUnit_Framework_MockObject_MockObject $mock,
-        array $expectations)
-    {
-        foreach ($expectations as $expectation) {
-            $this->setExpectation($mock, $expectation);
-        }
-    }
-
-    protected function setExpectation(
-        PHPUnit_Framework_MockObject_MockObject $mock,
-        $expectation)
-    {
-        if (!$expectation instanceof Expectation) {
-            $expectation = $this->prepareExpectation((array)$expectation);
-        }
-
-        $expectation->build($mock);
-    }
-
-    protected function newPartialMock(
+    private function newPartialMock(
         $className,
         array $methods = [],
         array $constructorArgs = null): PHPUnit_Framework_MockObject_MockObject
     {
         /** @var PHPUnit_Framework_MockObject_MockBuilder $builder */
-        $builder = $this->getMockBuilder($className);
+        $builder = $this->testCase->getMockBuilder($className);
         $builder->disableOriginalClone();
         $builder->disableArgumentCloning();
         $builder->disallowMockingUnknownTypes();
@@ -159,7 +166,7 @@ trait MockWithExpectations2Trait
         return array_keys($array) !== range(0, \count($array) - 1);
     }
 
-    protected function getMethodsToMock($className, array $expectations) : array
+    private function getMethodsToMock($className, array $expectations) : array
     {
         $expectedMethods = $this->getExpectedMethods($expectations);
         $missingMethods = $this->getMissingMethods($className);

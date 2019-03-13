@@ -1,4 +1,4 @@
-# MockWithExpectationsTrait
+# MockWithExpectations
 
 [![Build Status](https://travis-ci.org/nopolabs/mock-with-expectations.svg?branch=master)](https://travis-ci.org/nopolabs/mock-with-expectations)
 [![Code Climate](https://codeclimate.com/github/nopolabs/mock-with-expectations/badges/gpa.svg)](https://codeclimate.com/github/nopolabs/mock-with-expectations)
@@ -6,12 +6,12 @@
 [![License](https://poser.pugx.org/nopolabs/mock-with-expectations/license)](https://packagist.org/packages/nopolabs/mock-with-expectations)
 [![Latest Stable Version](https://poser.pugx.org/nopolabs/mock-with-expectations/v/stable)](https://packagist.org/packages/nopolabs/mock-with-expectations)
 
-This trait contains some helper methods to be used in a sub-class of
-`PHPUnit\Framework\TestCase`.
+This package provides a more concise notation for building mock objects
+in a sub-class of `PHPUnit\Framework\TestCase`.
 
 I like testing with mocks and expectations.
 It lets me test my code without having to test the components with which it interacts.
-Those components need to be tested too, but not by each test I write of code that uses them.
+Those components need to be tested too, but I want my tests focused on one thing at a time.
 
 Consider this `refundOrder()` function:
 ```
@@ -85,10 +85,10 @@ public function testRefundOrder()
 {
     $orderId = 1337;
     $order = $this->createMock(Order::class);
-    $manager = $this->newPartialMockWithExpectations(OrderManager::class, [
-        ['findOrder', ['params' => [$orderId], 'result' => $order]],
-        ['isRefundable', ['params' => [$order], 'result' => true]],
-        ['refund', ['params' => [$order]]],
+    $manager = $this->createMockWithExpectations(OrderManager::class, [
+        ['findOrder', [$orderId], $order],
+        ['isRefundable', [$order], true],
+        ['refund', [$order]],
     ]);
     $manager->refundOrder($orderId);
 }
@@ -97,9 +97,9 @@ public function testRefundOrderNotRefundable()
 {
     $orderId = 1337;
     $order = $this->createMock(Order::class);
-    $manager = $this->newPartialMockWithExpectations(OrderManager::class, [
-        ['findOrder', ['params' => [$orderId], 'result' => $order]],
-        ['isRefundable', ['params' => [$order], 'result' => false]],
+    $manager = $this->createMockWithExpectations(OrderManager::class, [
+        ['findOrder', [$orderId], $order],
+        ['isRefundable', [$order], false],
         ['refund', 'never'],
     ]);
     $manager->refundOrder($orderId);
@@ -107,7 +107,7 @@ public function testRefundOrderNotRefundable()
 ```
 
 Using `MockWithExpectationsTrait` reduces the amount of boilerplate code
-needed to write the tests. In addition it is using the `at()` invocation
+needed to write the tests. In addition it uses the `at()` invocation
 matcher to ensure that the methods are called in the expected order. The
 original test does not check the order in which the methods are called.
 
@@ -175,10 +175,10 @@ class OrderManagerTest extends TestCase
     {
         $orderId = 1337;
         $order = $this->createMock(Order::class);
-        $management = $this->newPartialMockWithExpectations(OrderManagement::class, [
-            ['findOrder', ['params' => [$orderId], 'result' => $order],
-            ['isRefundable', ['params' => [$order], 'result' => true]
-            ['refund', ['params' => [$order]]],
+        $management = $this->createMockWithExpectations(OrderManagement::class, [
+            ['findOrder', [$orderId], $order],
+            ['isRefundable', [$order], true]
+            ['refund', [$order]],
         ]);
         $manager = new OrderManager($management);
         
@@ -186,6 +186,35 @@ class OrderManagerTest extends TestCase
     }
 }
 ```
+
+# Expectations Syntax
+```
+$expectationsList = [
+    ['method', ['params'], 'result', 'throws', 'invoked'],
+    ['calculate', ['foo, 'bar'], 42],
+    [
+        'method' => 'calculate',
+        'params' => ['foo', 'bar'],
+        'result' => 42,
+        'throws' => null,
+        'invoked' => TestCase::once(),
+    ],
+];
+
+$expectationsMap = [
+    'method' => [['params'], 'result', 'throws', 'invoked'],
+];
+```
+
+## method
+
+## params
+
+## result
+
+## throws
+
+## invoked
 
 # Using MockWithExpectationsTrait
 
@@ -195,14 +224,11 @@ class OrderManagerTest extends TestCase
 
 ## methods
 
-### newPartialMockWithExpectations
-
-### newPartialMock
-
-### setExpectations
-
-### setAtExpectations
+### createMockWithExpectations
+Creates a mock object initialized with the provided expectations.
 
 ### setExpectation
+Sets an expectation on a mock object.
 
-### convertToMatcher
+### setExpectations
+Sets expectations on a mock object.

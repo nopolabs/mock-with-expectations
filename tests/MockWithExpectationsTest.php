@@ -68,10 +68,10 @@ class MockWithExpectationsTest extends TestCase
     /**
      * @dataProvider mockWithExpectationsDataProvider
      */
-    public function testMockWithExpectations(array $expectations) : void
+    public function testCreateMockWithExpectations(array $expectations) : void
     {
         /** @var MyClass $myTest */
-        $myTest = $this->mockWithExpectations->mockWithExpectations(MyClass::class, $expectations);
+        $myTest = $this->mockWithExpectations->createMockWithExpectations(MyClass::class, $expectations);
 
         $this->assertSame('z', $myTest->myFunction('x'));
     }
@@ -131,7 +131,7 @@ class MockWithExpectationsTest extends TestCase
             [['fun', 'invoked' => 'atMost 2'], ['params' => [], 'result' => null], 1],
             [['fun', 'invoked' => 'atMost 2'], ['params' => [], 'result' => null], 2],
             [
-                ['fun', 'result' => function ($arg) {
+                ['fun', 'result' => function($arg) {
                     return ($arg === 'foo' ? 'bar' : 'wat?');
                 }],
                 ['params' => ['foo'], 'result' => 'bar']
@@ -260,7 +260,7 @@ class MockWithExpectationsTest extends TestCase
      */
     public function testMissingMethods(string $className, array $expectations) : void
     {
-        $mock = $this->mockWithExpectations->mockWithExpectations($className, $expectations);
+        $mock = $this->mockWithExpectations->createMockWithExpectations($className, $expectations);
 
         $this->assertSame('hello', $mock->method1());
     }

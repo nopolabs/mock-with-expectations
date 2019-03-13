@@ -1,8 +1,9 @@
 <?php
-declare (strict_types=1);
+declare(strict_types=1);
 
 namespace Nopolabs\Test;
 
+use PHPUnit\Framework\TestCase;
 use PHPUnit_Framework_MockObject_MockObject;
 
 /**
@@ -17,7 +18,7 @@ trait MockWithExpectationsTrait
         array $expectations = [],
         array $constructorArgs = null): PHPUnit_Framework_MockObject_MockObject
     {
-        return $this->getMockWithExpectations()->mockWithExpectations(
+        return $this->getMockWithExpectations()->createMockWithExpectations(
             $className,
             $expectations,
             $constructorArgs
@@ -41,7 +42,11 @@ trait MockWithExpectationsTrait
     protected function getMockWithExpectations() : MockWithExpectations
     {
         if ($this->mockWithExpectations === null) {
-            $this->mockWithExpectations = new MockWithExpectations($this);
+            if ($this instanceof TestCase) {
+                $this->mockWithExpectations = new MockWithExpectations($this);
+            } else {
+                throw new TestException(\get_class($this).' is not an instance of '.TestCase::class);
+            }
         }
 
         return $this->mockWithExpectations;

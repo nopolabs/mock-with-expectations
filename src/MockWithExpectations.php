@@ -19,7 +19,7 @@ class MockWithExpectations
         $this->testCase = $testCase;
     }
 
-    public function mockWithExpectations(
+    public function createMockWithExpectations(
         string $className,
         array $expectations = [],
         array $constructorArgs = null): PHPUnit_Framework_MockObject_MockObject
@@ -42,7 +42,7 @@ class MockWithExpectations
 
     public function setExpectations(
         PHPUnit_Framework_MockObject_MockObject $mock,
-        array $expectations)
+        array $expectations) : void
     {
         foreach ($expectations as $expectation) {
             $this->setExpectation($mock, $expectation);
@@ -129,7 +129,7 @@ class MockWithExpectations
     }
 
     private function newPartialMockWithExpectations(
-        $className,
+        string $className,
         array $expectations,
         array $constructorArgs = null): PHPUnit_Framework_MockObject_MockObject
     {
@@ -141,7 +141,7 @@ class MockWithExpectations
     }
 
     private function newPartialMock(
-        $className,
+        string $className,
         array $methods = [],
         array $constructorArgs = null): PHPUnit_Framework_MockObject_MockObject
     {
@@ -166,7 +166,7 @@ class MockWithExpectations
         return array_keys($array) !== range(0, \count($array) - 1);
     }
 
-    private function getMethodsToMock($className, array $expectations) : array
+    private function getMethodsToMock(string $className, array $expectations) : array
     {
         $expectedMethods = $this->getExpectedMethods($expectations);
         $missingMethods = $this->getMissingMethods($className);
@@ -183,7 +183,7 @@ class MockWithExpectations
         ));
     }
 
-    private function getMissingMethods($className) : array
+    private function getMissingMethods(string $className) : array
     {
         $reflection = new ReflectionClass($className);
 
@@ -200,15 +200,18 @@ class MockWithExpectations
 
     private function getPublicMethods(ReflectionClass $reflection) : array
     {
-        return array_map(function (ReflectionMethod $method) {
-            return $method->name;
-        }, $reflection->getMethods(ReflectionMethod::IS_PUBLIC));
+        return $this->getMethods($reflection, ReflectionMethod::IS_PUBLIC);
     }
 
     private function getAbstractMethods(ReflectionClass $reflection) : array
     {
-        return array_map(function (ReflectionMethod $method) {
+        return $this->getMethods($reflection, ReflectionMethod::IS_ABSTRACT);
+    }
+
+    private function getMethods(ReflectionClass $reflection, int $filter) : array
+    {
+        return array_map(function(ReflectionMethod $method) {
             return $method->name;
-        }, $reflection->getMethods(ReflectionMethod::IS_ABSTRACT));
+        }, $reflection->getMethods($filter));
     }
 }

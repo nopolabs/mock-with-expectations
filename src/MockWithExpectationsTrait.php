@@ -14,7 +14,7 @@ use ReflectionMethod;
  */
 trait MockWithExpectationsTrait
 {
-    // abstract methods implemented by PHPUnit\Framework\TestCase
+    // methods implemented by PHPUnit\Framework\TestCase
     abstract public function getMockBuilder($className);
     abstract public static function any();
     abstract public static function at($index);
@@ -138,7 +138,7 @@ trait MockWithExpectationsTrait
     protected function getInvoked(array $expectation): PHPUnit_Framework_MockObject_Matcher_Invocation
     {
         if (isset($expectation['invoked'])) {
-            if ($expectation['invoked'] instanceof PHPUnit_Framework_MockObject_Matcher_Invocation) {
+            if (\is_object($expectation['invoked'])) {
                 $invoked = $expectation['invoked'];
             } else {
                 $invoked = $this->convertToInvocation($expectation['invoked']);

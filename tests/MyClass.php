@@ -10,11 +10,14 @@ class MyClass
         throw new Exception('fun() was not mocked!');
     }
 
-    public function myFunction($value)
+    public function myFunction($value, int $count = 1)
     {
-        $a = $this->a($value);
-        $b = $this->b($a);
-        return $b;
+        while ($count-- > 0) {
+            $value = $this->a($value);
+            $value = $this->b($value);
+        }
+
+        return $value;
     }
 
     protected function a($a)
@@ -30,5 +33,15 @@ class MyClass
     protected function c($c)
     {
         return "c($c)";
+    }
+
+    protected function d($d)
+    {
+        return "d($d)";
+    }
+
+    protected function e($e)
+    {
+        throw new Exception($e);
     }
 }

@@ -6,7 +6,6 @@ use Nopolabs\Test\MockWithExpectationsTrait;
 use PHPUnit\Framework\ExpectationFailedException;
 use PHPUnit\Framework\TestCase;
 use PHPUnit_Framework_MockObject_Matcher_Invocation;
-use Throwable;
 
 class MockWithExpectationsTraitTest extends TestCase
 {

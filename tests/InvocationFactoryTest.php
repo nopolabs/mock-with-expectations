@@ -45,10 +45,22 @@ class InvocationFactoryTest extends TestCase
         $this->assertEquals($expected, $this->invocationFactory->prepareInvocation($invoked));
     }
 
-    public function testPrepareInvocation_fails()
+    public function failsDataProvider() : array
+    {
+        return [
+            ['two times', "prepareInvocationString cannot handle 'two times'"],
+            ['maybe', "prepareInvocationMethod cannot handle 'maybe'"],
+            ['about 2', "prepareInvocationMethodCount cannot handle 'about 2'"],
+        ];
+    }
+
+    /**
+     * @dataProvider failsDataProvider
+     */
+    public function testPrepareInvocation_fails(string $invoked, string $expected)
     {
         $this->expectException(TestException::class);
-        $this->expectExceptionMessage("prepareInvocationString cannot handle 'maybe'");
-        $this->invocationFactory->prepareInvocation('maybe');
+        $this->expectExceptionMessage($expected);
+        $this->invocationFactory->prepareInvocation($invoked);
     }
 }

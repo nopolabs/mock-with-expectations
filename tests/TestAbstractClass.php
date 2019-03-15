@@ -1,5 +1,5 @@
 <?php
-namespace Nopolabs\Test\Tests;
+namespace Nopolabs\Test;
 
 abstract class TestAbstractClass
 {

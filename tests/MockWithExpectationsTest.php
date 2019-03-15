@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace Nopolabs\Test\Tests;
 
+namespace Nopolabs\Test;
+
 use Exception;
-use Nopolabs\Test\MockWithExpectations;
-use Nopolabs\Test\TestException;
 use PHPUnit\Framework\TestCase;
 use PHPUnit_Framework_MockObject_MockObject;
 
@@ -20,7 +20,10 @@ class MockWithExpectationsTest extends TestCase
     protected function setUp() : void
     {
         $this->testCase = $this->createMock(TestCase::class);
-        $this->mockWithExpectations = new MockWithExpectations($this->testCase);
+        $invocationFactory = new InvocationFactory();
+        $expectationsFactory = new ExpectationsFactory($invocationFactory);
+        $mockFactory = new MockFactory($this->testCase);
+        $this->mockWithExpectations = new MockWithExpectations($expectationsFactory, $mockFactory);
 
         $this->testCase->expects($this->any())
             ->method('getMockBuilder')
@@ -144,11 +147,11 @@ class MockWithExpectationsTest extends TestCase
     /**
      * @dataProvider expectationDataProvider
      */
-    public function testSetExpectation(array $expectation, $expected, $count = 1)
+    public function testAddExpectation(array $expectation, $expected, $count = 1)
     {
         $mock = $this->createMock(MyClass::class);
 
-        $this->mockWithExpectations->setExpectation($mock, $expectation);
+        $this->mockWithExpectations->addExpectation($mock, $expectation);
 
         if ($count > 0) {
             $params = $expected['params'] ?? [];
@@ -162,32 +165,32 @@ class MockWithExpectationsTest extends TestCase
         }
     }
 
-    public function testSetExpectationWithThrows()
+    public function testAddExpectationWithThrows()
     {
         $mock = $this->createMock(MyClass::class);
         $this->expectExceptionMessage('boom!');
 
-        $this->mockWithExpectations->setExpectation($mock, ['fun', 'throws' => new Exception('boom!')]);
+        $this->mockWithExpectations->addExpectation($mock, ['fun', 'throws' => new Exception('boom!')]);
 
         $mock->fun();
     }
 
-    public function testSetExpectationParamsArrayCasting()
+    public function testAddExpectationParamsArrayCasting()
     {
         $mock = $this->createMock(MyClass::class);
 
-        $this->mockWithExpectations->setExpectation($mock, ['fun', 'not an array', 42]);
+        $this->mockWithExpectations->addExpectation($mock, ['fun', 'not an array', 42]);
 
         $this->assertSame(42, $mock->fun('not an array'));
     }
 
-    public function testSetExpectationCannotHaveBothResultAndThrows()
+    public function testAddExpectationCannotHaveBothResultAndThrows()
     {
         $mock = $this->createMock(MyClass::class);
         $this->expectException(TestException::class);
         $this->expectExceptionMessage("cannot expect both 'result' and 'throws'");
 
-        $this->mockWithExpectations->setExpectation($mock, ['fun', 'result' => true, 'throws' => new Exception()]);
+        $this->mockWithExpectations->addExpectation($mock, ['fun', 'result' => true, 'throws' => new Exception()]);
     }
 
     public function expectationResultDataProvider()
@@ -207,17 +210,17 @@ class MockWithExpectationsTest extends TestCase
     /**
      * @dataProvider expectationResultDataProvider
      */
-    public function testSetExpectationResult($result)
+    public function testAddExpectationResult($result)
     {
         $mock = $this->createMock(MyClass::class);
 
-        $this->mockWithExpectations->setExpectation($mock, ['fun', [], $result]);
+        $this->mockWithExpectations->addExpectation($mock, ['fun', [], $result]);
         $mock->expects($this->exactly(1))->method('fun');
 
         $this->assertSame($result, $mock->fun());
     }
 
-    public function testSetExpectations() : void
+    public function testAddExpectations() : void
     {
         $expectations = [
             ['fun', ['foo', 2], 'bar', 'invoked' => $this->at(0)],
@@ -227,7 +230,7 @@ class MockWithExpectationsTest extends TestCase
 
         $mock = $this->createMock(MyClass::class);
 
-        $this->mockWithExpectations->setExpectations($mock, $expectations);
+        $this->mockWithExpectations->addExpectations($mock, $expectations);
 
         $this->assertSame('bar', $mock->fun('foo', 2));
         $this->assertSame('baz', $mock->fun('foo'));

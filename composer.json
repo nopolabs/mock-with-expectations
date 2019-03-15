@@ -24,7 +24,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Nopolabs\\Test\\Tests\\": "tests"
+            "Nopolabs\\Test\\": "tests"
         }
     }
 }

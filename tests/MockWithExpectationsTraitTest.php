@@ -4,11 +4,9 @@ declare (strict_types=1);
 
 namespace Nopolabs\Test\Tests;
 
-use Exception;
-use Nopolabs\Test\MockWithExpectations;
-use Nopolabs\Test\MockWithExpectationsTrait;
+namespace Nopolabs\Test;
+
 use PHPUnit\Framework\TestCase;
-use PHPUnit_Framework_MockObject_Matcher_Invocation;
 
 class MockWithExpectationsTraitTest extends TestCase
 {
@@ -28,18 +26,18 @@ class MockWithExpectationsTraitTest extends TestCase
         $this->assertSame('z', $myTest->myFunction('x'));
     }
 
-    public function testSetExpectation() : void
+    public function testAddExpectation() : void
     {
         $expectation = ['fun', ['foo', 'bar'], 'baz'];
 
         $mock = $this->createMock(MyClass::class);
 
-        $this->setExpectation($mock, $expectation);
+        $this->addExpectation($mock, $expectation);
 
         $this->assertSame('baz', $mock->fun('foo', 'bar'));
     }
 
-    public function testSetExpectations() : void
+    public function testAddExpectations() : void
     {
         $expectations = [
             ['fun', ['foo', 'bar'], 'baz', 'invoked' => TestCase::at(0)],
@@ -48,7 +46,7 @@ class MockWithExpectationsTraitTest extends TestCase
 
         $mock = $this->createMock(MyClass::class);
 
-        $this->setExpectations($mock, $expectations);
+        $this->addExpectations($mock, $expectations);
 
         $this->assertSame('baz', $mock->fun('foo', 'bar'));
         $this->assertSame('blat', $mock->fun('foo', 'bar'));

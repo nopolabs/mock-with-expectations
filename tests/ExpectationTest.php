@@ -1,9 +1,12 @@
 <?php
 declare(strict_types=1);
 
-use Nopolabs\Test\Expectation;
-use Nopolabs\Test\Tests\MyClass;
+namespace Nopolabs\Test;
+
 use PHPUnit\Framework\TestCase;
+use PHPUnit_Framework_MockObject_Builder_InvocationMocker;
+use PHPUnit_Framework_MockObject_Matcher_Invocation;
+use PHPUnit_Framework_MockObject_MockObject;
 
 class ExpectationTest extends TestCase
 {
@@ -12,25 +15,28 @@ class ExpectationTest extends TestCase
         $this->assertSame('methodName', (new Expectation('methodName'))->getMethod());
     }
 
-    public function buildDataProvider() : array
+    public function setDataProvider() : array
     {
         return [
-            ['fun'],
+            ['fun', [], null, null, $this->never()],
+            ['fun', ['foo'], null, null, $this->any()],
+            ['fun', ['foo'], 'bar', null, $this->any()],
+            ['fun', ['foo'], null, 'boom!', $this->any()],
+            ['fun', ['foo'], 'bar', null, $this->once()],
         ];
     }
 
     /**
-     * @dataProvider buildDataProvider
+     * @dataProvider setDataProvider
      */
-    public function testBuild(
+    public function testSet(
         string $method,
-        array $params = [],
-        $result = null,
-        $throws = null,
-        $invoked = null) : void
+        array $params,
+        $result,
+        $throws,
+        PHPUnit_Framework_MockObject_Matcher_Invocation $invocation) : void
     {
         $mock = $this->createMock(MyClass::class);
-
         $builder = $this->createMock(PHPUnit_Framework_MockObject_Builder_InvocationMocker::class);
 
         /** @var Expectation|PHPUnit_Framework_MockObject_MockObject $expectation */
@@ -39,12 +45,12 @@ class ExpectationTest extends TestCase
             ->disableArgumentCloning()
             ->disallowMockingUnknownTypes()
             ->setMethods(['mockExpects', 'mockMethod', 'mockParams', 'mockResult', 'mockThrows'])
-            ->setConstructorArgs([$method, $params, $result, $throws, $invoked])
+            ->setConstructorArgs([$method, $params, $result, $throws, $invocation])
             ->getMock();
 
         $expectation->expects($this->once())
             ->method('mockExpects')
-            ->with($mock, $invoked)
+            ->with($mock, $this->isInstanceOf(PHPUnit_Framework_MockObject_Matcher_Invocation::class))
             ->willReturn($builder);
 
         $expectation->expects($this->once())
@@ -52,72 +58,36 @@ class ExpectationTest extends TestCase
             ->with($builder, $method)
             ->willReturn($builder);
 
-        if (!empty($this->params)) {
+        if (empty($params)) {
+            $expectation->expects($this->never())
+                ->method('mockParams');
+        } else {
             $expectation->expects($this->once())
                 ->method('mockParams')
-                ->with($builder, $params);
+                ->with($builder, $params)
+                ->willReturn($builder);
         }
 
-        if ($result !== null) {
+        if ($result === null) {
+            $expectation->expects($this->never())
+                ->method('mockResult');
+        } else {
             $expectation->expects($this->once())
                 ->method('mockResult')
-                ->with($builder, $result);
+                ->with($builder, $result)
+                ->willReturn($builder);
         }
 
-        if ($throws !== null) {
+        if ($throws === null) {
+            $expectation->expects($this->never())
+                ->method('mockThrows');
+        } else {
             $expectation->expects($this->once())
                 ->method('mockThrows')
-                ->with($builder, $throws);
+                ->with($builder, $throws)
+                ->willReturn($builder);
         }
 
-        $expectation->build($mock);
-    }
-
-    public function prepareInvocationDataProvider()
-    {
-        return [
-            [0, $this->never()],
-            [1, $this->once()],
-            [2, $this->exactly(2)],
-            [3, $this->exactly(3)],
-            ['0', $this->never()],
-            ['1', $this->once()],
-            ['2', $this->exactly(2)],
-            ['3', $this->exactly(3)],
-            ['once', $this->once()],
-            ['any', $this->any()],
-            ['never', $this->never()],
-            ['atLeastOnce', $this->atLeastOnce()],
-            ['atLeast 2', $this->atLeast(2)],
-            ['exactly 2', $this->exactly(2)],
-            ['atMost 2', $this->atMost(2)],
-        ];
-    }
-
-    /**
-     * @dataProvider prepareInvocationDataProvider
-     */
-    public function testPrepareInvocation($invoked, $expected)
-    {
-        $expectation = new Expectation('method', [], null, null, $invoked);
-
-        $invocation = $expectation->prepareInvocation($invoked);
-
-        $this->assertEquals($expected, $invocation);
-    }
-
-    public function invokedDataProvider() : array
-    {
-        $data = array_map(
-            function($args) {
-                list($invoked, $expected) = $args;
-                return [['invoked' => $invoked], $expected];
-            },
-            $this->convertToInvocationDataProvider()
-        );
-        $data[] = [[], $this->any()];
-        $data[] = [['invoked' => $this->at(17)], $this->at(17)];
-
-        return $data;
+        $expectation->set($mock);
     }
 }

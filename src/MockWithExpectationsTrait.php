@@ -25,25 +25,28 @@ trait MockWithExpectationsTrait
         );
     }
 
-    protected function setExpectation(
+    protected function addExpectation(
         PHPUnit_Framework_MockObject_MockObject $mock,
-        $expectation) : void
+        array $expectation) : void
     {
-        $this->getMockWithExpectations()->setExpectation($mock, $expectation);
+        $this->addExpectations($mock, [$expectation]);
     }
 
-    protected function setExpectations(
+    protected function addExpectations(
         PHPUnit_Framework_MockObject_MockObject $mock,
         array $expectations) : void
     {
-        $this->getMockWithExpectations()->setExpectations($mock, $expectations);
+        $this->getMockWithExpectations()->addExpectations($mock, $expectations);
     }
 
     protected function getMockWithExpectations() : MockWithExpectations
     {
         if ($this->mockWithExpectations === null) {
             if ($this instanceof TestCase) {
-                $this->mockWithExpectations = new MockWithExpectations($this);
+                $invocationFactory = new InvocationFactory();
+                $expectationsFactory = new ExpectationsFactory($invocationFactory);
+                $mockFactory = new MockFactory($this);
+                $this->mockWithExpectations = new MockWithExpectations($expectationsFactory, $mockFactory);
             } else {
                 throw new TestException(\get_class($this).' is not an instance of '.TestCase::class);
             }

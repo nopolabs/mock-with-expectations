@@ -6,12 +6,16 @@ namespace Nopolabs\Test;
 use PHPUnit\Framework\TestCase;
 use PHPUnit_Framework_MockObject_MockObject;
 
-/**
- * This trait expects to be used in a sub-class of PHPUnit\Framework\TestCase
- */
 trait MockWithExpectationsTrait
 {
     private $mockWithExpectations;
+
+    /**
+     * This trait expects to be used in a sub-class of PHPUnit\Framework\TestCase
+     * which provides implementations of these functions:
+     */
+    abstract public function getMockBuilder($className);
+    abstract public function registerMockObject(PHPUnit_Framework_MockObject_MockObject $mockObject);
 
     public function mockWithExpectations(
         $className,

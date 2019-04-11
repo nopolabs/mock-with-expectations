@@ -52,6 +52,32 @@ public function testRefundOrder()
 }
 ```
 
+And using `MockWithExpectationsTrait`:
+```
+use MockWithExpectationsTrait;
+
+public function testRefundOrder()
+{
+    $orderId = 1337;
+
+    $order = $this->createMockWithExpectations(Order::class, [
+        ['isRefundable', [], true],
+    ]);
+
+    $orderRepository = $this->createMockWithExpectations(OrderRepository::class, [
+        ['findOrder', [$orderId], $order],
+    ]);
+
+    $orderRefunder = $this->createMockWithExpectations(OrderRefunder::class, [
+        ['refund', [$order]],
+    ]);
+
+    $manager = new OrderManager($orderRepository, $orderRefunder);
+
+    $manager->refundOrder($orderId);
+}
+```
+
 Refactoring `refundOrder()`:
 
 ```
@@ -81,6 +107,8 @@ protected function refund(Order $order)
 
 And using `MockWithExpectationsTrait`:
 ```
+use MockWithExpectationsTrait;
+
 public function testRefundOrder()
 {
     $orderId = 1337;
@@ -225,10 +253,10 @@ $expectationsMap = [
 ## methods
 
 ### createMockWithExpectations
-Creates a mock object initialized with the provided expectations.
+Creates a partial mock object and adds the provided expectations.
 
-### setExpectation
-Sets an expectation on a mock object.
+### addExpectation
+Adds an expectation on a mock object.
 
-### setExpectations
-Sets expectations on a mock object.
+### addExpectations
+Adds expectations on a mock object.

@@ -42,7 +42,7 @@ class MockWithExpectationsTest extends TestCase
             ]],
             [[
                 ['a'],
-                ['b', [$this->anything()], 'z'],
+                ['b', [$this->anything()], 'z', 'invoked' => 'once'],
                 ['c', 'never'],
             ]],
             [[

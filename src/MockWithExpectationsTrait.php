@@ -13,7 +13,7 @@ trait MockWithExpectationsTrait
 {
     private $mockWithExpectations;
 
-    protected function mockWithExpectations(
+    public function mockWithExpectations(
         $className,
         array $expectations = [],
         array $constructorArgs = null): PHPUnit_Framework_MockObject_MockObject
@@ -25,14 +25,14 @@ trait MockWithExpectationsTrait
         );
     }
 
-    protected function addExpectation(
+    public function addExpectation(
         PHPUnit_Framework_MockObject_MockObject $mock,
         array $expectation) : void
     {
         $this->addExpectations($mock, [$expectation]);
     }
 
-    protected function addExpectations(
+    public function addExpectations(
         PHPUnit_Framework_MockObject_MockObject $mock,
         array $expectations) : void
     {
@@ -42,16 +42,32 @@ trait MockWithExpectationsTrait
     protected function getMockWithExpectations() : MockWithExpectations
     {
         if ($this->mockWithExpectations === null) {
-            if ($this instanceof TestCase) {
-                $invocationFactory = new InvocationFactory();
-                $expectationsFactory = new ExpectationsFactory($invocationFactory);
-                $mockFactory = new MockFactory($this);
-                $this->mockWithExpectations = new MockWithExpectations($expectationsFactory, $mockFactory);
-            } else {
-                throw new TestException(\get_class($this).' is not an instance of '.TestCase::class);
-            }
+            $expectationsFactory = $this->getExpectationsFactory();
+            $mockFactory = $this->getMockFactory();
+            $this->mockWithExpectations = new MockWithExpectations($expectationsFactory, $mockFactory);
         }
 
         return $this->mockWithExpectations;
+    }
+
+    protected function getInvocationFactory() : InvocationFactory
+    {
+        return new InvocationFactory();
+    }
+
+    protected function getExpectationsFactory() : ExpectationsFactory
+    {
+        $invocationFactory = $this->getInvocationFactory();
+
+        return new ExpectationsFactory($invocationFactory);
+    }
+
+    protected function getMockFactory() : MockFactory
+    {
+        if ($this instanceof TestCase) {
+            return new MockFactory($this);
+        }
+
+        throw new TestException(\get_class($this).' is not an instance of '.TestCase::class);
     }
 }
